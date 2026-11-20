@@ -1,0 +1,824 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<script>
+/* SAJÁT PRÓBA (informatikus nélkül): töltsd ki a négy értéket. tenantId = Directory (tenant) ID, clientId = Application (client) ID az Entra app-regisztráció Áttekintés lapjáról; siteHost = a céges SharePoint gazdagépe (pl. ceg.sharepoint.com); sitePath = a próbawebhely útvonala. scopes: 'all' = Sites.ReadWrite.All, rendszergazdai jóváhagyás nélkül. */
+window.KK_CFG = { tenantId: '05e05a4a-9531-478c-afdf-bf2845e3ec1f', clientId: '50008f27-a1cb-4949-ad01-447684d0b76b', siteHost: 'fdbkfthun.sharepoint.com', sitePath: '/sites/KivitelezesProba', lib: 'Kiadasok', list: 'Esemenyek', scopes: 'all' };
+</script>
+<title>Kígyó Kivitelezés</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+<style>
+:root{--bg:#0b1520;--surface:#122130;--surface-2:#182a3b;--line:#24394d;--ink:#e8eef3;--ink-2:#8fa6b8;--accent:#f5c400;--accent-ink:#1b1500;--mm:#ff5800;--ok:#2ebe5a;--h1:#baf6aa;--h2:#0e5828;--font-ui:'Barlow Semi Condensed',system-ui,-apple-system,'Segoe UI',sans-serif;--font-num:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;color-scheme:dark}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#eef2f5;--surface:#ffffff;--surface-2:#f3f6f8;--line:#d3dde5;--ink:#122130;--ink-2:#566a7b;--accent:#e0b000;--accent-ink:#1b1500;color-scheme:light}}
+:root[data-theme="light"]{--bg:#eef2f5;--surface:#ffffff;--surface-2:#f3f6f8;--line:#d3dde5;--ink:#122130;--ink-2:#566a7b;--accent:#e0b000;--accent-ink:#1b1500;color-scheme:light}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:500 15px/1.35 var(--font-ui);overflow:hidden;-webkit-tap-highlight-color:transparent}
+#app{position:fixed;inset:0;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr) auto;padding-top:env(safe-area-inset-top,0px)}
+.hd{display:flex;align-items:center;gap:10px;padding-block:8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));background:var(--surface);border-bottom:1px solid var(--line)}
+.brand{display:flex;flex-direction:column;min-width:0;flex:1}
+.brand b{font-size:16px;font-weight:700;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand span{font:500 12px var(--font-num);color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg{display:inline-flex;gap:2px;padding:2px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.seg button{border:0;background:none;color:var(--ink-2);font:600 13.5px var(--font-ui);padding:0 12px;min-height:36px;border-radius:8px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.ib{width:40px;height:40px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);color:var(--ink);display:grid;place-items:center;cursor:pointer;flex:none}
+.bar{display:block;padding-block:6px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));font:500 12.5px var(--font-num);color:var(--ink-2);background:var(--bg);border-bottom:1px solid var(--line)}
+.bar b{color:var(--ink)}
+.bar .warn{color:var(--mm)}
+.stage{position:relative;min-height:0;touch-action:none}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
+.empty{position:absolute;inset:0;display:grid;place-items:center;padding:24px}
+.empty .card{max-width:420px;text-align:center;background:var(--surface);border:1px dashed var(--line);border-radius:14px;padding:24px}
+.empty h1{font-size:20px;margin:0 0 8px}
+.empty p{color:var(--ink-2);margin:0 0 16px}
+.fab{position:absolute;right:max(12px,env(safe-area-inset-right,0px));bottom:12px;display:flex;flex-direction:column;gap:8px}
+.panel{background:var(--surface);border-top:1px solid var(--line);padding-block:10px calc(10px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-height:52vh;overflow:auto}
+.panel h2{margin:0;font-size:17px;font-weight:700}
+.panel .sub{font:500 12.5px var(--font-num);color:var(--ink-2);margin:2px 0 8px;overflow-wrap:anywhere}
+.acts{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:8px 0}
+.btn{min-height:48px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);color:var(--ink);font:600 15px var(--font-ui);padding:0 14px;cursor:pointer}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.h1{border-color:#5bbf4a}.btn.h2{border-color:#1f8a45}.btn.ok{border-color:var(--ok)}
+.btn.mm{border-color:var(--mm);color:var(--mm)}
+.btn.sm{min-height:36px;font-size:13.5px;border-radius:9px}
+.chip{display:inline-block;padding:2px 8px;border-radius:999px;font:600 12px var(--font-ui);border:1px solid var(--line);color:var(--ink-2);margin-right:4px}
+.chip.on{background:var(--ok);border-color:var(--ok);color:#06210f}
+.chip.h1{background:var(--h1);border-color:var(--h1);color:#123a0c}.chip.h2{background:var(--h2);border-color:var(--h2);color:#d9f5e1}
+.chg{border-left:3px solid var(--mm);padding:6px 10px;margin:8px 0;background:color-mix(in srgb,var(--mm) 10%,transparent);border-radius:0 8px 8px 0}
+.chg b{color:var(--mm)}
+.hist{list-style:none;margin:6px 0 0;padding:0;border-top:1px solid var(--line)}
+.hist li{padding:6px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.hist time{font:500 12px var(--font-num);color:var(--ink-2);margin-right:6px}
+.hist i{color:var(--ink-2)}
+.note{color:var(--ink-2);font-size:13px;margin:6px 0}
+details summary{cursor:pointer;color:var(--ink-2);font-weight:600;margin-top:6px}
+.ov{position:fixed;inset:0;background:rgb(0 0 0/.5);display:grid;place-items:center;padding:16px;z-index:20}
+.ov[hidden]{display:none}
+.dlg{width:min(460px,100%);max-height:90vh;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+.dlg h3{margin:0 0 8px;font-size:17px}
+.dlg label{display:block;font-size:13px;color:var(--ink-2);margin:10px 0 4px}
+.dlg input,.dlg textarea{width:100%;font:500 16px var(--font-ui);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px}
+.dlg .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.dlg .row .btn{flex:1 1 140px}
+.menu{display:grid;gap:8px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:10px 14px;border-radius:10px;font-weight:600;max-width:calc(100% - 32px);z-index:70}
+.toast[hidden]{display:none}
+.list{list-style:none;padding:0;margin:6px 0}
+.list li{padding:6px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.mm-ov{position:fixed;inset:0;z-index:60;background:rgb(0 0 0/.45);display:flex;align-items:center;justify-content:center;padding:max(12px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+.mm-ov[hidden]{display:none}
+.mm-box{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;width:min(980px,100%);max-height:100%;overflow:auto;box-shadow:0 12px 40px rgb(0 0 0/.35)}
+.mm-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--surface);z-index:1}
+.mm-head span{display:block;font-size:12px;color:var(--ink-2)}
+.mm-wrap{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:12px;padding:12px 14px}
+.mm-svg{width:100%;height:auto;max-height:56vh;display:block;background:var(--bg);border:1px solid var(--line);border-radius:8px}
+.mm-p0{fill:rgb(127 140 150/.18);stroke:var(--ink-2);stroke-width:1.5}
+.mm-p1{fill:rgb(255 88 0/.16);stroke:#ff5800;stroke-width:2.2;stroke-dasharray:8 5}
+.mm-leg{font-size:12px;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin:6px 0 0}
+.mm-k0,.mm-k1{display:inline-block;width:18px;height:10px;border:1.5px solid var(--ink-2);background:rgb(127 140 150/.18);vertical-align:middle;margin-right:4px}
+.mm-k1{border:2px dashed #ff5800;background:rgb(255 88 0/.16)}
+.mm-row{display:grid;grid-template-columns:minmax(0,1fr) 72px 104px;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid var(--line)}
+.mm-row label small{display:block;font-size:11px;color:var(--ink-2)}
+.mm-th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-2)}
+.mm-o{text-align:right;font-family:var(--font-num,monospace);color:var(--ink-2)}
+.mm-row input{width:100%;height:38px;font:600 15px var(--font-num,monospace);text-align:right;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.mm-row input.mm-ch{border-color:#ff5800;box-shadow:0 0 0 1px #ff5800 inset}
+.mm-note{display:block;margin-top:10px;font-size:12px;color:var(--ink-2)}
+.mm-note textarea{display:block;width:100%;margin-top:4px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:14px var(--font-ui,sans-serif);resize:vertical}
+.mm-btns{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
+@media (max-width:760px){.mm-ov{padding:0;align-items:stretch}.mm-box{border-radius:0;width:100%;height:100%;max-height:none}.mm-wrap{grid-template-columns:minmax(0,1fr)}.mm-svg{max-height:40vh}.mm-btns .btn{flex:1 1 140px;min-height:44px}}
+.mm-dim{font:600 15px/1 var(--font-num,monospace);fill:var(--ink-2);cursor:pointer}.mm-dim.ch{fill:#ff5800}.mm-dim.on{fill:var(--ink);text-decoration:underline}.mm-e{stroke:transparent;stroke-width:20;stroke-linecap:round;cursor:pointer}.mm-e:hover{stroke:rgb(255 88 0/.18)}.mm-e.on{stroke:rgb(255 200 0/.45);stroke-width:10}.mm-row.sel{background:rgb(255 200 0/.08)}.mm-tip{margin:10px 0}.mm-ds{color:#ff5800}.mm-h0{fill:var(--bg);stroke:var(--ink-2);stroke-width:1.4;cursor:pointer}.mm-h0.on{stroke:var(--ink);stroke-width:2}.mm-h1{fill:none;stroke:#ff5800;stroke-width:2;stroke-dasharray:6 4;pointer-events:none}.mm-hx{stroke:#ff5800;stroke-width:2}.mm-hd{stroke:var(--ink-2);stroke-width:1;stroke-dasharray:3 3}.mm-hdt{font-size:13px}.mm-hs{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:10px 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-2)}.mm-hs span{margin-right:auto}.mm-cards{display:grid;gap:8px;margin:6px 0 10px}.mm-card{border:1px solid var(--line);border-left:3px solid #ff5800;border-radius:8px;padding:8px 10px;background:var(--bg);cursor:pointer;font-size:12.5px}.mm-card:hover{border-color:#ff5800}.mm-ch1{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;margin-bottom:4px}.mm-fs{color:#ff5800;font-size:11.5px}.mm-at{margin-left:auto;color:var(--ink-2);font-size:11px}.mm-cr{display:grid;grid-template-columns:52px minmax(0,1fr);gap:8px;color:var(--ink-2)}.mm-cr .mono{color:var(--ink);overflow-wrap:anywhere}.mm-cl{margin:4px 0 0;padding-left:16px;color:#ff5800;font-size:12px}.mm-cn{margin:4px 0 0;color:var(--ink-2);font-style:italic}
+.mm-box .btn.wide{flex:2 1 180px;background:var(--mm);border-color:var(--mm);color:#fff}
+.req{border:1px solid var(--line);border-left:3px solid var(--mm);border-radius:0 10px 10px 0;padding:6px 10px;margin:8px 0;font-size:13.5px}
+.req b{color:var(--mm)}
+.req .mono{font-family:var(--font-num);font-size:12.5px}
+.rq{display:grid;gap:6px;margin:8px 0}
+.srch{margin:8px 0}
+.sw{border:1px solid var(--line);border-left:3px solid #7a4dff;border-radius:0 10px 10px 0;padding:6px 10px;margin:8px 0;font-size:13.5px}.sw details{margin-top:4px}.sw .btn.sm{margin-left:4px}
+.chg .btn.sm{margin-left:6px;vertical-align:middle}.srch input{width:100%;font:500 16px var(--font-ui);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-height:44px}
+.rq button{display:block;width:100%;text-align:left;border:1px solid var(--line);border-left:3px solid var(--mm);border-radius:0 10px 10px 0;background:var(--surface-2);color:var(--ink);font:500 13.5px var(--font-ui);padding:8px 10px;cursor:pointer}
+.rq button.fl{border-left-color:#ff5800;border-left-style:double}
+.rq small{display:block;color:var(--ink-2);font-family:var(--font-num);font-size:12px}
+h3.sec{margin:12px 0 0;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2)}
+@media (max-width:560px){.hd .seg button{padding:0 8px;font-size:13px}.brand b{font-size:15px}}
+</style>
+
+</head>
+<body>
+<div id="app">
+  <header class="hd">
+    <div class="brand"><b id="ttl">Kígyó · Kivitelezés</b><span id="sub">nincs kiadás betöltve</span></div>
+    <div class="seg" role="group" aria-label="Nézet"><button type="button" data-v="hs" aria-pressed="true">Háttérszerk.</button><button type="button" data-v="ps" aria-pressed="false">Panel</button></div>
+    <button class="ib" id="btnMenu" type="button" aria-label="Menü"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 5h14M3 10h14M3 15h14"/></svg></button>
+  </header>
+  <div class="bar" id="bar"></div>
+  <main class="stage" id="stage">
+    <canvas id="cv"></canvas>
+    <div class="empty" id="empty"><div class="card"><h1>Kiadás betöltése</h1><p id="emptyTxt">Töltsd be a tervező által kiadott csomagot (JSON). Később ez automatikusan a céges SharePointról jön.</p><button class="btn pri" type="button" data-a="load">Kiadási csomag megnyitása</button></div></div>
+    <div class="fab"><button class="ib" type="button" data-a="multi" id="btnMulti" aria-pressed="false" title="Több elem kijelölése" aria-label="Több elem kijelölése"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" height="6" rx="1"/><rect x="3" y="11" width="6" height="6" rx="1"/><rect x="11" y="11" width="6" height="6" rx="1"/></svg></button><button class="ib" type="button" data-a="fit" title="Teljes nézet" aria-label="Teljes nézet"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 8V3h5M17 8V3h-5M3 12v5h5M17 12v5h-5"/></svg></button></div>
+  </main>
+  <section class="panel" id="panel" aria-live="polite"></section>
+</div>
+<div class="ov" id="ov" hidden><div class="dlg" id="dlg"></div></div>
+<div class="mm-ov" id="mmod" hidden role="dialog" aria-modal="true" aria-label="Méretmódosítás kérése"><div class="mm-box" id="mmBody"></div></div>
+<div class="toast" id="toast" hidden></div>
+<input type="file" id="fileIn" accept=".json,application/json" hidden>
+<input type="file" id="spUpIn" accept=".json,application/json" hidden>
+
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const LS = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } } };
+// ---- állapot ----
+let HLT = '', HSONLY = false, QS = '', PEND = null, PKG = null, EL = [], BYK = new Map(), EV = [], ME = LS.get('kk-me') || '', VIEW = 'hs', SHOWALL = false, MULTI = false;
+const SEL = new Set(); let ST = new Map();
+const CAM = { phi: -0.75, th: 0.5, s: 1, ox: 0, oy: 0, c: [0, 0, 0], fit: false };
+const STN = { hs: ['szereletlen', 'konzol felszerelve', 'profil felszerelve'], ps: ['nincs felszerelve', 'panel felszerelve'] };
+const evKey = () => 'kk-ev-' + (PKG ? PKG.projekt || 'projekt' : '');
+function toast(t, ms) { const el = $('toast'); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => { el.hidden = true; }, ms || 2600); }
+// ---- csomag ----
+function loadPkg(txt, quiet) {
+  let P; try { P = JSON.parse(txt); } catch (e) { toast('A fájl nem olvasható (hibás JSON).'); return false; }
+  if (!P || !/^fdb-kigyo-kiadas\//.test(P.format || '') || !Array.isArray(P.elemek)) { toast('Ez nem Kígyó kiadási csomag.'); return false; }
+  PKG = P; EL = P.elemek.filter(e => Array.isArray(e.kontur_mm) && e.kontur_mm.length >= 9).map(e => { const g = e.kontur_mm, pts = []; for (let i = 0; i + 2 < g.length; i += 3) pts.push([g[i], g[i + 1], g[i + 2]]); return Object.assign({}, e, { pts: pts }); });
+  BYK = new Map(EL.map(e => [e.kulcs, e])); LS.set('kk-pkg', txt);
+  try { EV = JSON.parse(LS.get(evKey()) || '[]'); if (!Array.isArray(EV)) EV = []; } catch (e) { EV = []; }
+  SEL.clear(); HLT = ''; CAM.fit = false; replay(); ui(); if (PEND) { const k = PEND; PEND = null; setTimeout(() => { if (goTo(k)) toast(BYK.get(k).jel + ' kijelölve (QR)'); }, 60); } else if (!quiet) toast('Betöltve: ' + (P.projekt || '') + ' · rev. ' + P.rev + ' · ' + EL.length + ' elem');
+  return true;
+}
+// ---- napló: csak hozzáírás; az állapot az események időrendjéből ----
+function replay() {
+  ST = new Map(); const ev = EV.slice().sort((a, b) => a.at.localeCompare(b.at));
+  for (const x of ev) { let s = ST.get(x.k); if (!s) { s = { hs: 0, ps: 0, ack: 0, last: 0, n: 0, mm: null, fm: null }; ST.set(x.k, s); } if (x.f === 'hs' || x.f === 'ps') { s[x.f] = x.v; s.last = Math.max(s.last, x.rev || 0); s.n++; } if (x.f === 'ack') s.ack = Math.max(s.ack, x.rev || 0); if (x.f === 'mm' || x.f === 'fm') s[x.f] = x.v ? x : null; }
+}
+const stOf = k => ST.get(k) || { hs: 0, ps: 0, ack: 0, last: 0, n: 0, mm: null, fm: null };
+// tervmódosítás a mostani kiadásban olyan elemen, amelyen korábbi kiadás alapján már volt szerelési jelölés (amíg nincs nyugtázva)
+const flagged = e => { if (!PKG || e.valtozas !== 'változott' || e.rev !== PKG.rev) return false; const s = stOf(e.kulcs); return s.n > 0 && s.last < PKG.rev && s.ack < PKG.rev && (s.hs > 0 || s.ps > 0); };
+function unsent() { if (SP.on) return EV.filter(x => !x.sync).length; let S; try { S = new Set(JSON.parse(LS.get(evKey() + '-exp') || '[]')); } catch (e) { S = new Set(); } return EV.filter(x => !S.has(x.id)).length; }
+function addEv(list) { const now = new Date().toISOString(); for (const x of list) EV.push(Object.assign({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), at: now, by: ME, rev: PKG.rev }, x)); LS.set(evKey(), JSON.stringify(EV)); replay(); ui(); spKick(); }
+function setSt(f, v, note) {
+  if (!ME) { askName(() => setSt(f, v, note)); return; }
+  const T = [...SEL], ev = [], skip = []; let down = false;
+  for (const k of T) { const s = stOf(k), cur = s[f]; if (cur === v) continue; if (f === 'hs' && v === 2 && s.hs < 1) { skip.push(k); continue; } if (f === 'ps' && v === 1 && s.hs < 2) { skip.push(k); continue; } if (v < cur) down = true; if (f === 'hs' && v < 2 && s.ps) ev.push({ k: k, f: 'ps', v: 0, note: 'profil nélkül a panel sem maradhat' }); ev.push({ k: k, f: f, v: v }); }
+  if (!ev.length) { toast(skip.length ? skip.length + ' elem kimaradt: ' + (f === 'hs' ? 'profil csak konzol után' : 'panel csak felszerelt profilra') + '.' : 'Már mind ebben az állapotban van.'); return; }
+  if (down && note == null) { askNote(n => setSt(f, v, n)); return; }
+  for (const x of ev) if (note) x.note = x.note ? x.note + ' · ' + note : note;
+  addEv(ev); toast(STN[f][v] + ' · ' + ev.filter(x => x.f === f).length + ' elem' + (skip.length ? ' · ' + skip.length + ' kimaradt' : ''));
+}
+// ---- dialógusok ----
+function dlg(html) { $('dlg').innerHTML = html; $('ov').hidden = false; }
+function closeDlg() { $('ov').hidden = true; $('dlg').innerHTML = ''; }
+function askName(then) { dlg('<h3>Ki vagy?</h3><p class="note">A jelöléseid ezzel a névvel és időponttal kerülnek a naplóba. (A céges bejelentkezés bekötése után ezt a fiókod adja.)</p><label for="nmIn">Név</label><input id="nmIn" autocomplete="name" value="' + esc(ME) + '"><div class="row"><button class="btn pri" type="button" data-d="name">Mentés</button><button class="btn" type="button" data-d="x">Mégse</button></div>'); askName.then = then; setTimeout(() => $('nmIn').focus(), 30); }
+function askNote(then) { dlg('<h3>Visszalépés indoklása</h3><p class="note">Korábbi állapotra állítasz vissza (pl. le kellett szedni). Az előzmény megmarad, ez új sorként kerül a naplóba.</p><label for="ntIn">Indoklás (kötelező)</label><textarea id="ntIn" rows="3" maxlength="300"></textarea><div class="row"><button class="btn pri" type="button" data-d="note">Rögzítés</button><button class="btn" type="button" data-d="x">Mégse</button></div>'); askNote.then = then; setTimeout(() => $('ntIn').focus(), 30); }
+function menu() {
+  const gone = PKG ? (PKG.megszunt || []) : [];
+  dlg('<h3>Menü</h3><div class="menu">' + (SP.on ? (SP.err === 'login' ? '<button class="btn pri" type="button" data-a="spLogin">Bejelentkezés (M365)</button>' : '') + (SP.ready ? '<button class="btn pri" type="button" data-a="spSync">Szinkron most' + (unsent() ? ' (' + unsent() + ' küldésre vár)' : '') + '</button>' + SP.pk.slice(0, 8).map(x => '<button class="btn" type="button" data-a="spOpen" data-id="' + esc(x.id) + '">' + esc(x.proj + ' · rev. ' + x.rev) + (PKG && PKG.projekt === x.proj && PKG.rev === x.rev ? ' · betöltve' : '') + '</button>').join('') + '<button class="btn" type="button" data-a="spUp">Kiadási csomag feltöltése (tervező)…</button>' : '') : '') + '<button class="btn" type="button" data-a="load">Kiadási csomag megnyitása fájlból…</button><button class="btn" type="button" data-a="export"' + (EV.length ? '' : ' disabled') + '>Napló mentése a tervezőnek (' + EV.length + ' esemény' + (unsent() ? ', ' + unsent() + ' új' : '') + ')</button>' + (SP.on && SP.acct ? '<p class="note">Bejelentkezve: <b>' + esc(ME) + '</b></p>' : '<button class="btn" type="button" data-a="name">Név: ' + esc(ME || '—') + '</button>') + '' + (VIEW === 'ps' ? '<button class="btn" type="button" data-a="all" aria-pressed="' + SHOWALL + '">' + (SHOWALL ? 'Nem szerelhetők elrejtése' : 'Nem szerelhetők is látszanak') + '</button>' : '<button class="btn" type="button" data-a="hsonly" aria-pressed="' + HSONLY + '">' + (HSONLY ? 'Szereletlenek is látszanak' : 'Csak a szereltek látszanak') + '</button>') + '<button class="btn" type="button" data-a="lab">Felirat: ' + LAB_N[LAB] + '</button><button class="btn" type="button" data-d="x">Bezárás</button></div>' +
+    (gone.length ? '<details><summary>Megszűnt elemek ebben a kiadásban · ' + gone.length + '</summary><ul class="list">' + gone.map(g => { const s = stOf(g.kulcs); return '<li><b>' + esc(g.jel) + '</b> · ' + esc(g.meret || '') + (s.ps ? ' · <b style="color:var(--mm)">fel volt szerelve – bontandó</b>' : s.hs ? ' · ' + STN.hs[s.hs] : '') + (g.indoklas ? '<br><i>' + esc(g.indoklas) + '</i>' : '') + '</li>'; }).join('') + '</ul></details>' : '') +
+    (PKG ? '<p class="note">Kiadás: rev. ' + PKG.rev + ' · ' + esc((PKG.idopont || '').replace('T', ' ')) + (PKG.megjegyzes ? ' · ' + esc(PKG.megjegyzes) : '') + '</p>' : '') + (SP.on ? '<p class="note">A jelölések a céges SharePoint Esemenyek listájára kerülnek (csak hozzáírás); kapcsolat nélkül ezen az eszközön várnak.</p>' : '<p class="note">Próbaváltozat: a jelölések ezen az eszközön tárolódnak, a tervezőhöz naplófájlként jutnak el, amíg a céges SharePoint-bekötés el nem készül.</p>'));
+}
+async function exportLog() {
+  const L = { format: 'fdb-kigyo-naplo/1', projekt: PKG.projekt || '', rev: PKG.rev, mentve: new Date().toISOString(), keszito: ME, esemenyek: EV };
+  const name = String(PKG.projekt || 'projekt').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '_') + '_naplo_' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-') + '.json';
+  const blob = new Blob([JSON.stringify(L, null, 1)], { type: 'application/json' });
+  let dl = null; try { if (window.claude && typeof window.claude.use === 'function') dl = await window.claude.use('downloads'); } catch (e) { dl = null; }
+  const mark = () => { LS.set(evKey() + '-exp', JSON.stringify(EV.map(x => x.id))); ui(); };
+  try { if (dl) { await dl.save({ filename: name, data: blob }); mark(); toast('Mentve: ' + name); } else { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000); mark(); toast('Letöltés: ' + name); } } catch (e) { toast('A mentés nem sikerült.'); }
+}
+function fmtMM(v) { const r = Math.round(v); const s = Math.abs(v - r) < 0.05 ? String(Math.abs(r)) : Math.abs(v).toFixed(1).replace('.', ','); return (v < -0.0001 && s !== '0' ? MINUS : '') + s; }
+function fmtIn(v) { const r = Math.round(v); return Math.abs(v - r) < 0.0005 ? String(r) : String(Math.round(v * 1000) / 1000); }
+function calcExpr(str) {
+  const s = String(str == null ? '' : str).replace(/\s+/g, '').replace(/,/g, '.').replace(/[×xX]/g, '*').replace(/[÷:]/g, '/').replace(/−/g, '-');
+  if (!s) return NaN;
+  let i = 0;
+  const peek = () => s[i], next = () => s[i++];
+  const fact = () => {
+    if (peek() === '-') { next(); return -fact(); }
+    if (peek() === '+') { next(); return fact(); }
+    if (peek() === '(') { next(); const v = expr(); return next() === ')' ? v : NaN; }
+    const m = /^(\d+\.?\d*|\.\d+)(e[+-]?\d+)?/i.exec(s.slice(i)); if (!m) return NaN; i += m[0].length; return parseFloat(m[0]);
+  };
+  const term = () => { let v = fact(); while (peek() === '*' || peek() === '/') { const o = next(), r = fact(); v = o === '*' ? v * r : v / r; } return v; };
+  const expr = () => { let v = term(); while (peek() === '+' || peek() === '-') { const o = next(), r = term(); v = o === '+' ? v + r : v - r; } return v; };
+  const v = expr();
+  return i === s.length && Number.isFinite(v) ? +v.toPrecision(12) : NaN;
+}
+// --- mini számológép (Windows-féle azonnali kiértékelés: 12 + 3 × 2 = 30) ---
+const mmArea = P => { let a = 0; for (let i = 0; i < P.length; i++) { const p = P[i], q = P[(i + 1) % P.length]; a += p[0] * q[1] - q[0] * p[1]; } return a / 2; };
+// ismétlődő és egy egyenesbe eső csúcsok nélkül; [x, y, id]
+function mmClean(P) {
+  let Q = []; for (const v of P) { const l = Q[Q.length - 1]; if (!l || Math.hypot(v[0] - l[0], v[1] - l[1]) > 0.5) Q.push(v); }
+  while (Q.length > 2 && Math.hypot(Q[0][0] - Q[Q.length - 1][0], Q[0][1] - Q[Q.length - 1][1]) <= 0.5) Q.pop();
+  for (let ch = true; ch && Q.length > 3;) {
+    ch = false;
+    for (let i = 0; i < Q.length; i++) {
+      const a = Q[(i - 1 + Q.length) % Q.length], b = Q[i], c = Q[(i + 1) % Q.length], l1 = Math.hypot(b[0] - a[0], b[1] - a[1]), l2 = Math.hypot(c[0] - b[0], c[1] - b[1]);
+      const cr = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]);
+      if (l1 < 0.5 || l2 < 0.5 || Math.abs(cr) <= 2e-3 * l1 * l2) { Q.splice(i, 1); ch = true; break; }
+    }
+  }
+  return Q;
+}
+const mmKind = (a, b) => Math.abs(b[1] - a[1]) < 0.5 ? 'H' : Math.abs(b[0] - a[0]) < 0.5 ? 'V' : 'S';
+const mmBB = P => { const xs = P.map(v => v[0]), ys = P.map(v => v[1]); return [Math.min.apply(null, xs), Math.min.apply(null, ys), Math.max.apply(null, xs), Math.max.apply(null, ys)]; };
+const mmR = v => Math.round(v);
+// mezők a mostani kontúrból: élek (H / V hossz, S magasság + vízszintes vetület) és a háromszög csúcsa (0 szélességű felső / alsó él)
+function mmFields(P) {
+  const n = P.length, bb = mmBB(P), F = [], cy = (bb[1] + bb[3]) / 2, cx = (bb[0] + bb[2]) / 2;
+  const grp = (v, ax) => { const a = P[(v - 1 + n) % n], b = P[(v + 1) % n], k = ax ? 'H' : 'V'; let g = P[v][2]; if (mmKind(a, P[v]) === k) g = Math.min(g, a[2]); if (mmKind(P[v], b) === k) g = Math.min(g, b[2]); return g; };
+  const seen = {}, cnt = { H: 0, V: 0 };
+  for (let i = 0; i < n; i++) {
+    const a = P[i], b = P[(i + 1) % n], K = mmKind(a, b), ids = a[2] + '-' + b[2];
+    if (K === 'H' || K === 'V') {
+      const ax = K === 'H' ? 0 : 1, key = K + [grp(i, ax), grp((i + 1) % n, ax)].sort((x, y) => x - y).join(':'), at = K === 'H' ? a[1] : a[0], lo = K === 'H' ? bb[1] : bb[0], hi = K === 'H' ? bb[3] : bb[2];
+      const pos = Math.abs(at - lo) < 0.5 ? 0 : Math.abs(at - hi) < 0.5 ? 1 : 2;
+      const name = pos < 2 ? (K === 'H' ? ['Alsó él', 'Felső él'] : ['Bal oldal', 'Jobb oldal'])[pos] : (K === 'H' ? 'Vízszintes' : 'Függőleges') + ' él (lépcső ' + (++cnt[K]) + ')';
+      const f = { id: 'e' + ids + K, e: i, t: K, name: name, val: Math.abs(K === 'H' ? b[0] - a[0] : b[1] - a[1]), ids: ids };
+      if (seen[key]) { const o = seen[key]; if (o.t === 'H' && /Alsó|Felső/.test(o.name) && /Alsó|Felső/.test(name)) o.name = 'Szélesség'; if (o.t === 'V' && /Bal|Jobb/.test(o.name) && /Bal|Jobb/.test(name)) o.name = 'Magasság'; o.alt = (o.alt || []).concat(f.id); continue; }
+      seen[key] = f; F.push(f);
+    } else {
+      const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, w = (bb[3] - bb[1]) / 4, ww = (bb[2] - bb[0]) / 4;
+      const pos = my > cy + w ? 'felül' : my < cy - w ? 'alul' : mx < cx - ww ? 'bal' : mx > cx + ww ? 'jobb' : '';
+      F.push({ id: 'e' + ids + 'Sy', e: i, t: 'Sy', name: 'Ferde él' + (pos ? ' (' + pos + ')' : '') + ' · magasság', val: Math.abs(b[1] - a[1]), ids: ids });
+      F.push({ id: 'e' + ids + 'Sx', e: i, t: 'Sx', name: 'Ferde él' + (pos ? ' (' + pos + ')' : '') + ' · vízszintes', val: Math.abs(b[0] - a[0]), ids: ids });
+    }
+  }
+  if (n === 3) for (const top of [0, 1]) { // háromszög csúcsa a legalsó / legfelső ponton: 0 szélességű él (háromszög → trapéz)
+    const y = top ? bb[3] : bb[1], at = P.map((v, i) => i).filter(i => Math.abs(P[i][1] - y) < 0.5);
+    if (at.length === 1) { const v = at[0]; F.push({ id: 'a' + P[v][2], v: v, t: 'A', top: top, name: top ? 'Felső szélesség' : 'Alsó szélesség', val: 0, hint: top ? 'most csúcs · > 0 = trapéz' : 'most csúcs · > 0 = trapéz' }); }
+  }
+  if (n <= 4) { // egyszerű alak: a ferde él vetületei a többi mezőből adódnak; függőleges él nélkül egy magasság-mező
+    const hasV = F.some(f => f.t === 'V'); let k1 = false;
+    for (let i = F.length - 1; i >= 0; i--) if (F[i].t === 'Sx' || (F[i].t === 'Sy' && hasV)) F.splice(i, 1);
+    for (let i = 0; i < F.length; i++) if (F[i].t === 'Sy') { if (k1) { F.splice(i, 1); i--; } else { k1 = true; F[i].name = 'Magasság'; } }
+  }
+  for (const f of F) if (f.t === 'H' && /Alsó|Felső|Szélesség/.test(f.name) && n <= 4) f.hint = f.name === 'Szélesség' ? '' : '0 = háromszög (csúcs ' + (/Alsó/.test(f.name) ? 'alul' : 'felül') + ')';
+  return F;
+}
+// a mozgatott végpont: amelyiknél a másik él ferde (az veszi fel); döntetlennél vízszintesnél a jobb, függőlegesnél a felső vég; ferde él magasságánál a belső vég
+function mmPick(P, i, t) {
+  const n = P.length, ia = i, ib = (i + 1) % n, oa = mmKind(P[(ia - 1 + n) % n], P[ia]), ob = mmKind(P[ib], P[(ib + 1) % n]);
+  const sc = o => t === 'H' || t === 'V' ? (o === 'S' ? 2 : 1) : t === 'Sy' ? (o === 'V' ? 2 : o === 'S' ? 1.5 : 1) : (o === 'H' ? 2 : o === 'S' ? 1.5 : 1);
+  const sa = sc(oa), sb = sc(ob); if (sa !== sb) return sa > sb ? [ia, ib] : [ib, ia];
+  const bb = mmBB(P), cy = (bb[1] + bb[3]) / 2, A = P[ia], B = P[ib];
+  if (t === 'H' || t === 'Sx') return A[0] > B[0] ? [ia, ib] : [ib, ia];
+  if (t === 'V') return A[1] > B[1] ? [ia, ib] : [ib, ia];
+  return Math.abs(A[1] - cy) < Math.abs(B[1] - cy) ? [ia, ib] : [ib, ia];
+}
+// csúcs eltolása egy tengely mentén; a vele függőleges (x-nél) / vízszintes (y-nál) éllel összekötött szomszéd is mozog, így az él iránya marad
+function mmShift(P, v, ax, d) {
+  const n = P.length, k = ax ? 'H' : 'V', mv = [v];
+  for (const u of [(v - 1 + n) % n, (v + 1) % n]) if (mmKind(P[v], P[u]) === k) mv.push(u);
+  for (const u of mv) P[u][ax] += d;
+}
+function mmSimple(P) {
+  const n = P.length, X = (p, q, r) => (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]);
+  for (let i = 0; i < n; i++) for (let j = i + 2; j < n; j++) {
+    if (i === 0 && j === n - 1) continue;
+    const a = P[i], b = P[(i + 1) % n], c = P[j], d = P[(j + 1) % n];
+    const d1 = X(c, d, a), d2 = X(c, d, b), d3 = X(a, b, c), d4 = X(a, b, d);
+    if (((d1 > 1e-6 && d2 < -1e-6) || (d1 < -1e-6 && d2 > 1e-6)) && ((d3 > 1e-6 && d4 < -1e-6) || (d3 < -1e-6 && d4 > 1e-6))) return false;
+  }
+  return true;
+}
+function mmApply(f, L) {
+  const P = MM.P.map(v => v.slice()), n = P.length;
+  if (f.t === 'A') { // csúcs → vízszintes él: a függőleges oldal felőli csúcs marad, az új csúcs a ferde él felé
+    if (L < 0.5) return P; const v = f.v, pv = (v - 1 + n) % n, nv = (v + 1) % n, kp = mmKind(P[pv], P[v]), kn = mmKind(P[v], P[nv]), A = P[v], id = ++MM.nid;
+    if (kp === 'V' || kn === 'V') { const s = kp === 'V' ? nv : pv, sg = Math.sign(P[s][0] - A[0]) || 1, w = [A[0] + sg * L, A[1], id]; P.splice(s === nv ? v + 1 : v, 0, w); }
+    else { const sg = Math.sign(P[nv][0] - P[pv][0]) || 1, a1 = [A[0] - sg * L / 2, A[1], A[2]], a2 = [A[0] + sg * L / 2, A[1], id]; P.splice(v, 1, a1, a2); }
+    return P;
+  }
+  const mf = mmPick(P, f.e, f.t), m = mf[0], fx = mf[1], ax = f.t === 'H' || f.t === 'Sx' ? 0 : 1, s = Math.sign(P[m][ax] - P[fx][ax]) || 1;
+  mmShift(P, m, ax, P[fx][ax] + s * L - P[m][ax]);
+  return P;
+}
+function mmMatch(P) { // csúcs-azonosítók egy betöltött kontúrhoz: egyező hosszon sorrend szerint, máskülönben az egybeeső eredeti csúcsé
+  if (P.length === MM.P0.length) return P.map((v, i) => [v[0], v[1], MM.P0[i][2]]);
+  return P.map(v => { const o = MM.P0.find(w => Math.hypot(w[0] - v[0], w[1] - v[1]) < 0.6); return [v[0], v[1], o ? o[2] : ++MM.nid]; });
+}
+// összefoglaló szöveg: 3–4 csúcs: alsó/felső × magasság (902/41 × 2547) vagy szélesség × bal/jobb magasság; egyébként befoglaló × n-szög
+function mmTxt(P) {
+  const n = P.length, bb = mmBB(P), W = bb[2] - bb[0], H = bb[3] - bb[1], f = v => fmtMM(mmR(v));
+  const edgeAt = (ax, val) => { for (let i = 0; i < n; i++) { const a = P[i], b = P[(i + 1) % n]; if (mmKind(a, b) === (ax ? 'H' : 'V') && Math.abs(a[ax] - val) < 0.5) return Math.abs(ax ? b[0] - a[0] : b[1] - a[1]); } return 0; };
+  if (n === 4) { const hl = edgeAt(0, bb[0]), hr = edgeAt(0, bb[2]), B = edgeAt(1, bb[1]), T = edgeAt(1, bb[3]);
+    if (B && T) return (Math.abs(B - T) < 0.5 ? f(B) : f(B) + '/' + f(T)) + ' × ' + f(H);
+    if (hl && hr) return f(W) + ' × ' + (Math.abs(hl - hr) < 0.5 ? f(hl) : f(hl) + '/' + f(hr)); }
+  if (n === 3) { const B = edgeAt(1, bb[1]), T = edgeAt(1, bb[3]); if (B || T) return f(B) + '/' + f(T) + ' × ' + f(H); }
+  return f(W) + ' × ' + f(H) + ' · ' + n + '-szög';
+}
+// a változott mezők (név: eredeti → kért)
+function mmDiff() {
+  const F0 = mmFields(MM.P0), o = {}; for (const f of F0) { o[f.id] = f; for (const a of f.alt || []) o[a] = f; }
+  const apx = F0.filter(f => f.t === 'A').map(f => f.id.slice(1)), F1 = mmFields(MM.P), has = {}; for (const f of F1) { has[f.id] = 1; for (const a of f.alt || []) has[a] = 1; }
+  const out = []; for (const f of F1) { const g = o[f.id] || (f.alt || []).map(a => o[a]).find(Boolean); const v0 = g ? g.val : f.t === 'A' ? 0 : null; if (v0 == null) { if (f.t !== 'A' && !(f.ids && f.ids.split('-').some(x => apx.includes(x)))) out.push(f.name + ': új ' + fmtMM(mmR(f.val))); } else if (Math.abs(v0 - f.val) > 0.5) out.push(f.name + ': ' + fmtMM(mmR(v0)) + ' → ' + fmtMM(mmR(f.val))); }
+  for (const f of F0) if ((f.t === 'H' || f.t === 'V') && !has[f.id] && !(f.alt || []).some(a => has[a])) out.push(f.name + ': ' + fmtMM(mmR(f.val)) + ' → 0 (' + (f.t === 'H' ? 'csúcs' : 'megszűnt') + ')');
+  for (const f of F0) if (f.t === 'A' && !F1.some(g => g.id === f.id)) { const T = F1.find(g => g.t === 'H' && g.ids.split('-').includes(String(f.id.slice(1)))); if (T) out.push(f.name + ': 0 → ' + fmtMM(mmR(T.val))); }
+  return out.concat(MM.H ? mmHoleDiff() : []);
+}
+const mmHolePts = (h0, bb) => { const a = h0.bb, sx = (bb[2] - bb[0]) / Math.max(1e-6, a[2] - a[0]), sy = (bb[3] - bb[1]) / Math.max(1e-6, a[3] - a[1]); return h0.pts.map(p => [bb[0] + (p[0] - a[0]) * sx, bb[1] + (p[1] - a[1]) * sy]); };
+// a kivágás befoglalójától a kontúr éléig: vízszintesen a kivágás magasságának közepén, függőlegesen a szélessége közepén
+function mmHoleDist(P, bb) {
+  const n = P.length, yc = (bb[1] + bb[3]) / 2, xc = (bb[0] + bb[2]) / 2; let l = -Infinity, r = Infinity, b = -Infinity, t = Infinity;
+  for (let i = 0; i < n; i++) {
+    const a = P[i], c = P[(i + 1) % n];
+    if (a[1] !== c[1] && Math.min(a[1], c[1]) <= yc && yc < Math.max(a[1], c[1])) { const x = a[0] + (yc - a[1]) * (c[0] - a[0]) / (c[1] - a[1]); if (x <= xc) l = Math.max(l, x); else r = Math.min(r, x); }
+    if (a[0] !== c[0] && Math.min(a[0], c[0]) <= xc && xc < Math.max(a[0], c[0])) { const y = a[1] + (xc - a[0]) * (c[1] - a[1]) / (c[0] - a[0]); if (y <= yc) b = Math.max(b, y); else t = Math.min(t, y); }
+  }
+  return { L: l > -Infinity ? bb[0] - l : null, R: r < Infinity ? r - bb[2] : null, B: b > -Infinity ? bb[1] - b : null, T: t < Infinity ? t - bb[3] : null, l: l, r: r, b: b, t: t, xc: xc, yc: yc };
+}
+const MM_HN = { W: 'szélessége', H: 'magassága', D: 'átmérője', L: 'távolsága a bal éltől', R: 'távolsága a jobb éltől', B: 'távolsága az alsó éltől', T: 'távolsága a felső éltől' };
+function mmHoleFields(j) {
+  const h0 = MM.H0[j], h = MM.H[j]; if (!h0 || !h) return [];
+  const d0 = mmHoleDist(MM.P0, h0.bb), d1 = mmHoleDist(MM.P, h.bb), w0 = h0.bb[2] - h0.bb[0], hh0 = h0.bb[3] - h0.bb[1], w1 = h.bb[2] - h.bb[0], hh1 = h.bb[3] - h.bb[1];
+  const F = h0.ci ? [['D', w0, w1]] : [['W', w0, w1], ['H', hh0, hh1]];
+  for (const s of ['L', 'R', 'B', 'T']) F.push([s, d0[s], d1[s]]);
+  return F.map(x => ({ id: 'h' + j + x[0], t: x[0], name: 'Kivágás ' + h0.n + ' ' + MM_HN[x[0]], val: x[2], v0: x[1] }));
+}
+function mmHoleField(id, v) {
+  const mm = /^h(\d+)([WHDLRBT])$/.exec(id), j = mm ? +mm[1] : -1, h = MM.H[j]; if (!h) { mmRender(); return; }
+  const x = calcExpr(v); if (!Number.isFinite(x) || x < 0 || x > 20000) { toast('0 és 20000 mm közötti számot adj meg.'); mmRender(); return; }
+  const t = mm[2], bb = h.bb.slice(), d = mmHoleDist(MM.P, bb);
+  if (t === 'W' || t === 'D') { if (x < 1) { toast('A kivágás mérete legalább 1 mm.'); mmRender(); return; } bb[2] = bb[0] + x; if (t === 'D') bb[3] = bb[1] + x; }
+  else if (t === 'H') { if (x < 1) { toast('A kivágás mérete legalább 1 mm.'); mmRender(); return; } bb[3] = bb[1] + x; }
+  else { const cur = d[t]; if (cur == null) { toast('Ebben az irányban nincs él a kivágás mellett.'); mmRender(); return; } const dl = x - cur, s = t === 'L' || t === 'B' ? 1 : -1, ax = t === 'L' || t === 'R' ? 0 : 1; bb[ax] += s * dl; bb[ax + 2] += s * dl; }
+  const d2 = mmHoleDist(MM.P, bb); if (['L', 'R', 'B', 'T'].some(s => d2[s] == null || d2[s] < -0.5)) { toast('A kivágás így kilógna a táblából.', 3500); mmRender(); return; }
+  h.bb = bb.map(v => Math.round(v * 10) / 10); MM.sel = id;
+  mmRender(); const ins = [...document.querySelectorAll('#mmBody input[data-mm]')], cur = ins.findIndex(n => n.dataset.mm === id), nx = ins[cur + 1]; if (cur >= 0 && nx) { nx.focus(); nx.select(); }
+}
+const mmHoleCh = j => { const h0 = MM.H0[j], h = MM.H[j]; return !!h && (h.del || h.bb.some((v, i) => Math.abs(v - h0.bb[i]) > 0.05)); };
+function mmHoleDiff() { const out = []; MM.H.forEach((h, j) => { if (!mmHoleCh(j)) return; if (h.del) { out.push('Kivágás ' + MM.H0[j].n + ': elhagyva'); return; } for (const f of mmHoleFields(j)) if (f.v0 != null && f.val != null && Math.abs(f.v0 - f.val) > 0.5) out.push(f.name + ': ' + fmtMM(mmR(f.v0)) + ' → ' + fmtMM(mmR(f.val))); }); return out; }
+// rajz: kivágások (eredeti szürke, kért narancs szaggatott), a kijelölt kivágás méretvonalai a kontúrig
+function mmHoleSvg(X, Y) {
+  let s = '';
+  const poly = (P, cls, j) => '<polygon points="' + P.map(v => X(v).toFixed(1) + ',' + Y(v).toFixed(1)).join(' ') + '" class="' + cls + '" data-mm-h="' + j + '"/>';
+  MM.H0.forEach((h0, j) => { const h = MM.H[j], ch = mmHoleCh(j); s += poly(h0.pts, 'mm-h0' + (j === MM.hs ? ' on' : ''), j); if (ch && !h.del) s += poly(mmHolePts(h0, h.bb), 'mm-h1', j); if (h.del) { const b = h0.bb; s += '<line x1="' + X([b[0], b[1]]).toFixed(1) + '" y1="' + Y([b[0], b[1]]).toFixed(1) + '" x2="' + X([b[2], b[3]]).toFixed(1) + '" y2="' + Y([b[2], b[3]]).toFixed(1) + '" class="mm-hx"/><line x1="' + X([b[0], b[3]]).toFixed(1) + '" y1="' + Y([b[0], b[3]]).toFixed(1) + '" x2="' + X([b[2], b[1]]).toFixed(1) + '" y2="' + Y([b[2], b[1]]).toFixed(1) + '" class="mm-hx"/>'; } });
+  const j = MM.hs, h = MM.H[j]; if (h == null || h.del) return s;
+  const F = mmHoleFields(j), fv = {}; for (const f of F) fv[f.t] = f; const d = mmHoleDist(MM.P, h.bb), bb = h.bb;
+  const dim = (a, b, t, txt, side) => { const ax = X(a), ay = Y(a), bx = X(b), by = Y(b), f = fv[t], ch = f && f.v0 != null && f.val != null && Math.abs(f.v0 - f.val) > 0.5, on = MM.sel === 'h' + j + t;
+    const mx = (ax + bx) / 2 + (side === 'v' ? 6 : 0), my = (ay + by) / 2 + (side === 'h' ? -6 : 4), anc = side === 'v' ? 'start' : 'middle';
+    return '<line x1="' + ax.toFixed(1) + '" y1="' + ay.toFixed(1) + '" x2="' + bx.toFixed(1) + '" y2="' + by.toFixed(1) + '" class="mm-hd"/><text x="' + mx.toFixed(1) + '" y="' + my.toFixed(1) + '" text-anchor="' + anc + '" class="mm-dim mm-hdt' + (ch ? ' ch' : '') + (on ? ' on' : '') + '" data-mm-e="h' + j + t + '">' + txt + '</text>'; };
+  if (d.L != null) s += dim([d.l, d.yc], [bb[0], d.yc], 'L', fmtMM(mmR(d.L)), 'h');
+  if (d.R != null) s += dim([bb[2], d.yc], [d.r, d.yc], 'R', fmtMM(mmR(d.R)), 'h');
+  if (d.B != null) s += dim([d.xc, d.b], [d.xc, bb[1]], 'B', fmtMM(mmR(d.B)), 'v');
+  if (d.T != null) s += dim([d.xc, bb[3]], [d.xc, d.t], 'T', fmtMM(mmR(d.T)), 'v');
+  const w = bb[2] - bb[0], hh = bb[3] - bb[1], pc = MM.H0[j].ci;
+  if (Math.abs(X([bb[2], 0]) - X([bb[0], 0])) < 44 || Math.abs(Y([0, bb[3]]) - Y([0, bb[1]])) < 30) return s; // kis kivágás: a saját mérete csak a mezőkben (a rajzon a távolságokkal torlódna)
+  s += '<text x="' + X([(bb[0] + bb[2]) / 2, bb[3]]).toFixed(1) + '" y="' + (Y([0, bb[3]]) - 5).toFixed(1) + '" text-anchor="middle" class="mm-dim mm-hdt' + (fv[pc ? 'D' : 'W'] && Math.abs(fv[pc ? 'D' : 'W'].v0 - w) > 0.5 ? ' ch' : '') + '" data-mm-e="h' + j + (pc ? 'D' : 'W') + '">' + (pc ? 'Ø' : '') + fmtMM(mmR(w)) + '</text>';
+  if (!pc) s += '<text x="' + (X([bb[0], 0]) - 5).toFixed(1) + '" y="' + (Y([0, (bb[1] + bb[3]) / 2]) + 4).toFixed(1) + '" text-anchor="end" class="mm-dim mm-hdt' + (fv.H && Math.abs(fv.H.v0 - hh) > 0.5 ? ' ch' : '') + '" data-mm-e="h' + j + 'H">' + fmtMM(mmR(hh)) + '</text>';
+  return s;
+}
+const mmSameC = () => MM.P.length === MM.P0.length && MM.P.every((v, i) => Math.abs(v[0] - MM.P0[i][0]) < 0.05 && Math.abs(v[1] - MM.P0[i][1]) < 0.05); // csak a kontúr
+const mmSame = () => mmSameC() && MM.H.every((h, j) => !mmHoleCh(j));
+function mmSvg(F) {
+  const P0 = MM.P0, P1 = MM.P, all = P0.concat(P1), xs = all.map(v => v[0]), ys = all.map(v => v[1]), same = mmSameC();
+  const x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs), y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys), w = Math.max(1, x1 - x0), h = Math.max(1, y1 - y0);
+  const VW = 600, VH = 520, pad = 70, sc = Math.min((VW - 2 * pad) / w, (VH - 2 * pad) / h), X = v => pad + (v[0] - x0) * sc + ((VW - 2 * pad) - w * sc) / 2, Y = v => VH - pad - (v[1] - y0) * sc - ((VH - 2 * pad) - h * sc) / 2;
+  const pts = P => P.map(v => X(v).toFixed(1) + ',' + Y(v).toFixed(1)).join(' ');
+  const F0 = mmFields(P0), o = {}; for (const f of F0) { o[f.id] = f; for (const a of f.alt || []) o[a] = f; }
+  const selE = MM.sel != null ? F.find(f => f.id === MM.sel) : null, n = P1.length;
+  let edges = '', labs = '';
+  for (let i = 0; i < n; i++) {
+    const a = P1[i], b = P1[(i + 1) % n], K = mmKind(a, b), ax = X(a), ay = Y(a), bx = X(b), by = Y(b), L = Math.hypot(bx - ax, by - ay) || 1, nx = -(by - ay) / L, ny = (bx - ax) / L; // kifelé mutató normális (képernyőn, y lefelé; a kontúr pozitív körüljárású)
+    const eid = 'e' + a[2] + '-' + b[2] + (K === 'S' ? 'Sy' : K), fs = F.filter(f => f.e === i), alt = fs.length ? null : F.find(f => (f.alt || []).includes(eid)), on = selE && (selE.e === i || selE === alt);
+    edges += '<line x1="' + ax.toFixed(1) + '" y1="' + ay.toFixed(1) + '" x2="' + bx.toFixed(1) + '" y2="' + by.toFixed(1) + '" class="mm-e' + (on ? ' on' : '') + '" data-mm-e="' + (fs[0] ? fs[0].id : alt ? alt.id : '') + '"/>';
+    if (L < 16) continue;
+    const f = fs[0]; if (!f) continue; // lezárt párhuzamos él (téglalap szemközti oldala) vagy a többi mezőből adódó ferde él: nincs külön felirat
+    const txt = K === 'S' ? '↕' + fmtMM(mmR(Math.abs(b[1] - a[1]))) : fmtMM(mmR(K === 'H' ? Math.abs(b[0] - a[0]) : Math.abs(b[1] - a[1])));
+    const g = f && (o[f.id] || (f.alt || []).map(x => o[x]).find(Boolean)), ch = !g || Math.abs(g.val - f.val) > 0.5 || (K === 'S' && fs[1] && (() => { const g2 = o[fs[1].id]; return !g2 || Math.abs(g2.val - fs[1].val) > 0.5; })());
+    const inner = K === 'V' && /lépcső/.test(f.name), sg = inner ? -1 : 1; // lépcső fellépő éle: a felirat a táblán belül (ne torlódjon a belépő él feliratával)
+    const tw = txt.length * 4.6 + 6, off = sg * (Math.abs(nx) * tw + Math.abs(ny) * 12 + 4), mx = (ax + bx) / 2 + nx * off, my = (ay + by) / 2 + ny * off;
+    labs += '<text x="' + mx.toFixed(1) + '" y="' + (my + 5).toFixed(1) + '" text-anchor="middle" class="mm-dim' + (ch ? ' ch' : '') + (on ? ' on' : '') + '" data-mm-e="' + (f ? f.id : '') + '">' + txt + '</text>';
+  }
+  for (const f of F) if (f.t === 'A') { const v = P1[f.v]; labs += '<text x="' + X(v).toFixed(1) + '" y="' + (Y(v) + (f.top ? -12 : 22)).toFixed(1) + '" text-anchor="middle" class="mm-dim' + (MM.sel === f.id ? ' on' : '') + '" data-mm-e="' + f.id + '">0</text>'; }
+  return '<svg viewBox="0 0 ' + VW + ' ' + VH + '" class="mm-svg" role="img" aria-label="Eredeti és kért kontúr; koppints egy élre a méretéhez">' +
+    '<polygon points="' + pts(P0) + '" class="mm-p0"/>' + (same ? '' : '<polygon points="' + pts(P1) + '" class="mm-p1"/>') + mmHoleSvg(X, Y) + edges + labs + '</svg>';
+}
+function mmRender() {
+  const E = MM.E, R = mmGet(MM.k), F = mmFields(MM.P), F0 = mmFields(MM.P0), o = {}; for (const f of F0) { o[f.id] = f; for (const a of f.alt || []) o[a] = f; }
+  const n0 = MM.P0.length, ttl = (E.el && E.el.mark ? E.el.mark + ' · ' : '') + (E.el && E.el.tetel ? E.el.tetel + ' · ' : '') + (E.rv ? 'káva' : n0 === 3 ? 'háromszög' : n0 === 4 ? (F0.some(f => f.t === 'Sy') ? 'trapéz / ferde vágás' : 'téglalap') : n0 + '-szög');
+  const simple = MM.P.length <= 4;
+  const apx = F0.filter(f => f.t === 'A').map(f => f.id.slice(1));
+  const fld = f => { const g = o[f.id] || (f.alt || []).map(x => o[x]).find(Boolean), v0 = g ? g.val : f.t === 'A' || (f.ids && f.ids.split('-').some(x => apx.includes(x))) ? 0 : null, ch = v0 == null || Math.abs(v0 - f.val) > 0.5;
+    return '<div class="mm-row' + (MM.sel === f.id ? ' sel' : '') + '"><label for="mm_' + f.id + '">' + esc(f.name) + (f.hint ? '<small>' + esc(f.hint) + '</small>' : '') + '</label><span class="mm-o">' + (v0 == null ? '–' : fmtMM(mmR(v0))) + '</span><input id="mm_' + f.id + '" data-mm="' + f.id + '" data-num="1" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="' + fmtIn(mmR(f.val * 10) / 10) + '"' + (ch ? ' class="mm-ch"' : '') + '></div>'; };
+  const sel = MM.sel != null ? F.find(f => f.id === MM.sel || (f.alt || []).includes(MM.sel)) : null;
+  let rows = '';
+  if (simple) rows = F.map(fld).join('');
+  else { // sokszög: a kijelölt él (koppintás a rajzon); ferde élnél a két vetület
+    const L = sel ? F.filter(f => sel.e != null ? f.e === sel.e : f.id === sel.id) : [];
+    rows = L.length ? L.map(fld).join('') : '<p class="note mm-tip">Koppints egy élre vagy méretre a rajzon: annak az élnek a hossza (ferde élnél a magassága és a vízszintes vetülete) itt állítható.</p>';
+    const ds = mmDiff(); if (ds.length) rows += '<p class="note mm-ds">' + ds.map(esc).join('<br>') + '</p>';
+  }
+  if (MM.H0.length) { // kivágások: kiválasztó (több kivágásnál), méret és éltávolságok
+    const j = MM.hs, hf = mmHoleFields(j), hd = MM.H[j] && MM.H[j].del;
+    rows += '<div class="mm-hs"><span>Kivágás' + (MM.H0.length > 1 ? 'ok' : '') + '</span>' + (MM.H0.length > 1 ? MM.H0.map((h, i) => '<button class="btn sm" type="button" data-mm-a="hsel" data-v="' + i + '" aria-pressed="' + (i === j) + '">' + h.n + (mmHoleCh(i) ? ' •' : '') + '</button>').join('') : '') + '<button class="btn sm" type="button" data-mm-a="hdel" aria-pressed="' + !!hd + '">' + (hd ? 'Visszaállítás' : 'Elhagyás kérése') + '</button></div>';
+    if (!hd) rows += hf.map(f => { const ch = f.v0 == null || f.val == null || Math.abs(f.v0 - f.val) > 0.5; return '<div class="mm-row' + (MM.sel === f.id ? ' sel' : '') + '"><label for="mm_' + f.id + '">' + ({ W: 'Szélesség', H: 'Magasság', D: 'Átmérő', L: 'Bal éltől', R: 'Jobb éltől', B: 'Alsó éltől', T: 'Felső éltől' })[f.t] + '</label><span class="mm-o">' + (f.v0 == null ? '–' : fmtMM(mmR(f.v0))) + '</span><input id="mm_' + f.id + '" data-mm="' + f.id + '" data-num="1" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="' + (f.val == null ? '' : fmtIn(mmR(f.val * 10) / 10)) + '"' + (ch ? ' class="mm-ch"' : '') + (f.val == null ? ' disabled' : '') + '></div>'; }).join('');
+    else rows += '<p class="note mm-ds">A kivágás ' + MM.H0[j].n + ' elhagyását kéred.</p>';
+  }
+  $('mmBody').innerHTML = '<div class="mm-head"><div><b>Méretmódosítás kérése</b><span>' + esc(ttl) + (E.n > 1 ? ' · ' + E.n + ' darabból az első' : '') + '</span></div><button class="btn sm" type="button" data-mm-a="close" aria-label="Bezárás">✕</button></div>' +
+    '<div class="mm-wrap"><div class="mm-draw">' + mmSvg(F) + '<p class="mm-leg"><span class="mm-k0"></span>eredeti ' + esc(mmTxt(MM.P0)) + ' <span class="mm-k1"></span>kért ' + esc(mmTxt(MM.P)) + '</p></div>' +
+    '<div class="mm-form"><div class="mm-row mm-th"><span>Méret (mm)</span><span class="mm-o">eredeti</span><span>kért</span></div>' + rows +
+    '<label class="mm-note">Megjegyzés<textarea id="mm_note" rows="2" maxlength="300" placeholder="pl. helyszíni mérés: a falsík 12 mm-rel rövidebb">' + esc(MM.note) + '</textarea></label>' +
+    '<div class="mm-btns"><button class="btn wide" type="button" data-mm-a="save">Kérés mentése</button>' + (R ? '<button class="btn" type="button" data-mm-a="del">Kérés törlése</button>' : '') + '<button class="btn" type="button" data-mm-a="reset">Eredeti méretek</button></div>' +
+    '<p class="note">Nettó méretek a tábla saját síkjában. A vízszintes és függőleges élek iránya marad, a változást a csatlakozó ferde él veszi fel; ferde él: magasság vagy vízszintes vetület. Bármelyik él a rajzon koppintva is kijelölhető. A kért kontúr csak itt látszik; a 3D-ben az elemet narancs szaggatott keret jelöli, amíg a tervező újra ki nem adja.</p></div></div>';
+}
+function mmField(id, v) {
+  if (/^h\d+[WHDLRBT]$/.test(id)) { mmHoleField(id, v); return; }
+  const F = mmFields(MM.P), f = F.find(x => x.id === id || (x.alt || []).includes(id)); if (!f) { mmRender(); return; }
+  const x = calcExpr(v); if (!Number.isFinite(x) || x < 0 || x > 20000) { toast('0 és 20000 mm közötti számot adj meg.'); mmRender(); return; }
+  const L = Math.round(x * 10) / 10; if (Math.abs(L - f.val) < 0.05) { mmRender(); return; }
+  let P = mmClean(mmApply(f, L));
+  if (P.length < 3 || mmArea(P) < 100 || !mmSimple(P)) { toast(L < 0.5 ? 'Ez az él nem lehet 0: a tábla összeomlana.' : 'Ezzel a mérettel a kontúr önmagába metszene – adj meg kisebb eltérést, vagy előbb a szomszédos élt.', 4000); mmRender(); return; }
+  MM.P = P; const nf = mmFields(P).find(g => g.id === f.id || (g.alt || []).includes(f.id)); MM.sel = nf ? nf.id : null;
+  mmRender(); const ins = [...document.querySelectorAll('#mmBody input[data-mm]')], cur = ins.findIndex(n => n.dataset.mm === (nf ? nf.id : '')); const nx = ins[cur + 1]; if (cur >= 0 && nx) { nx.focus(); nx.select(); }
+}
+function mmPickEdge(id) {
+  if (!id) return; MM.sel = id; mmRender();
+  const n = document.querySelector('#mmBody input[data-mm="' + id + '"]') || [...document.querySelectorAll('#mmBody input[data-mm]')].find(x => { const F = mmFields(MM.P), f = F.find(g => g.id === x.dataset.mm); return f && (f.alt || []).includes(id); });
+  if (n) { n.scrollIntoView({ block: 'nearest' }); n.focus(); n.select(); }
+}
+function mmBind() {
+  const box = $('mmod');
+  box.addEventListener('click', e => {
+    if (e.target === box) { mmClose(); return; }
+    const ed = e.target.closest('[data-mm-e]'); if (ed) { mmPickEdge(ed.getAttribute('data-mm-e')); return; }
+    const hp = e.target.closest('[data-mm-h]'); if (hp) { MM.hs = +hp.getAttribute('data-mm-h'); mmRender(); return; }
+    const b = e.target.closest('[data-mm-a]'); if (!b) return; const a = b.dataset.mmA;
+    if (a === 'close') mmClose(); else if (a === 'save') mmSave(); else if (a === 'del') mmDel(MM.k); else if (a === 'reset') { MM.P = MM.P0.map(v => v.slice()); MM.H = MM.H0.map(h => ({ i: h.i, bb: h.bb.slice(), del: false })); MM.sel = null; mmRender(); }
+    else if (a === 'hsel') { MM.hs = +b.dataset.v; mmRender(); } else if (a === 'hdel') { const h = MM.H[MM.hs]; if (h) { h.del = !h.del; mmRender(); } }
+  });
+  box.addEventListener('focusin', e => { const t = e.target; if (t.dataset && t.dataset.mm && MM.sel !== t.dataset.mm) { MM.sel = t.dataset.mm; for (const n of box.querySelectorAll('.mm-e.on, .mm-dim.on, .mm-row.sel')) n.classList.remove('on', 'sel'); const r = t.closest('.mm-row'); if (r) r.classList.add('sel'); for (const n of box.querySelectorAll('[data-mm-e="' + t.dataset.mm + '"]')) n.classList.add('on'); } });
+  box.addEventListener('change', e => { const t = e.target; if (t.dataset && t.dataset.mm) mmField(t.dataset.mm, t.value); else if (t.id === 'mm_note') MM.note = t.value; });
+  box.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.dataset && e.target.dataset.mm) { e.preventDefault(); e.target.blur(); } });
+}
+// ---- kérések a tervezőnek: méretmódosítás (mm, kontúr + kivágások) és felmérés (fm); a szerkesztő magja a Kígyóéval azonos ----
+const MINUS = '−';
+const MM = { on: false, k: null, E: null, P0: null, P: null, sel: null, note: '', nid: 0, H0: [], H: [], hs: -1 };
+// a kiadott elem saját síkbeli kontúrja (sik_mm: bal alsó befoglaló sarok 0,0, pozitív körüljárás) és kivágásai (kivagas_mm)
+function pkgOutline(e) {
+  const f = e.sik_mm || []; let P = []; for (let i = 0; i + 1 < f.length; i += 2) P.push([+f[i], +f[i + 1]]);
+  if (P.length >= 3 && mmArea(P) < 0) P.reverse();
+  return P.map((v, i) => [v[0], v[1], i]);
+}
+function pkgHoles(e) {
+  return (e.kivagas_mm || []).map((a, j) => { const pts = []; for (let i = 0; i + 1 < a.length; i += 2) pts.push([+a[i], +a[i + 1]]); if (pts.length < 3) return null; const xs = pts.map(v => v[0]), ys = pts.map(v => v[1]), bb = [Math.min.apply(null, xs), Math.min.apply(null, ys), Math.max.apply(null, xs), Math.max.apply(null, ys)];
+    return { i: j, n: j + 1, ci: pts.length >= 12 && Math.abs((bb[2] - bb[0]) - (bb[3] - bb[1])) < 1.5, pts: pts, bb: bb }; }).filter(Boolean);
+}
+const isRv = k => /:r[LRT]\d/.test(k);
+// nyitott kérés: az utolsó esemény bekapcsolta, és az elemet azóta nem adták ki újra (újrakiadás = a tervező foglalkozott vele)
+function reqOpen(e, f) { const s = stOf(e.kulcs), x = s[f]; return !!x && !(e.rev > (x.rev || 0)); }
+const mmGet = k => { const e = BYK.get(k); return e && reqOpen(e, 'mm') ? stOf(k).mm.mm || null : null; };
+function mmOpen(k) {
+  const e = BYK.get(k); if (!e) return;
+  const P0 = pkgOutline(e); if (P0.length < 3) { toast('Ehhez az elemhez a kiadás nem tartalmaz síkbeli kontúrt: kérj felmérést, vagy írd le a megjegyzésben.', 4500); return; }
+  const R = mmGet(k); MM.on = true; MM.k = k; MM.E = { el: { mark: e.jel }, rv: isRv(k), n: 1 }; MM.P0 = P0; MM.nid = P0.length; MM.sel = null;
+  MM.P = R && Array.isArray(R.P) && R.P.length >= 3 ? mmMatch(R.P) : P0.map(v => v.slice());
+  MM.H0 = isRv(k) ? [] : pkgHoles(e); MM.H = MM.H0.map(h => ({ i: h.i, bb: h.bb.slice(), del: false })); MM.hs = MM.H0.length ? 0 : -1;
+  if (R && Array.isArray(R.H)) for (const x of R.H) { const h = MM.H.find(y => y.i === x.i); if (h && Array.isArray(x.b)) { h.bb = [x.b[0], x.b[1], x.b[0] + x.b[2], x.b[1] + x.b[3]]; h.del = !!x.del; } }
+  MM.note = R ? stOf(k).mm.note || '' : '';
+  $('mmod').hidden = false; mmRender();
+}
+function mmClose() { MM.on = false; $('mmod').hidden = true; $('mmBody').innerHTML = ''; }
+function mmSave() {
+  if (!ME) { askName(() => mmSave()); return; }
+  const k = MM.k, same = mmSame(), note = ($('mm_note') ? $('mm_note').value : MM.note).trim().slice(0, 300); MM.note = note;
+  if (same && !note) { toast('Nincs eltérés az eredetitől: nincs mit kérni.'); return; }
+  const hch = MM.H.map((h, j) => mmHoleCh(j) ? Object.assign({ b0: MM.H0[j].bb }, h) : null).filter(Boolean), o = mmTxt(MM.P0), r = mmTxt(MM.P) + (hch.length ? ' · kivágás ' + hch.length + ' db módosítva' : ''), ch = mmDiff().join('; ').slice(0, 400);
+  const rec = { P: MM.P.map(v => [Math.round(v[0] * 10) / 10, Math.round(v[1] * 10) / 10]), o: o, r: r.slice(0, 80), ch: ch };
+  if (hch.length) rec.H = hch.map(h => { const y = { i: h.i, b: [h.bb[0], h.bb[1], h.bb[2] - h.bb[0], h.bb[3] - h.bb[1]].map(v => Math.round(v * 10) / 10), b0: [h.b0[0], h.b0[1], h.b0[2] - h.b0[0], h.b0[3] - h.b0[1]].map(v => Math.round(v * 10) / 10) }; if (h.del) y.del = true; return y; });
+  addEv([{ k: k, f: 'mm', v: 1, mm: rec, note: note }]); mmClose(); toast('Méretmódosítás kérve: ' + (BYK.get(k) || {}).jel + ' · ' + o + ' → ' + rec.r, 4000);
+}
+function mmDel(k) {
+  if (!mmGet(k)) return; if (!ME) { askName(() => mmDel(k)); return; }
+  addEv([{ k: k, f: 'mm', v: 0, note: 'kérés visszavonva' }]); if (MM.on) mmClose(); toast('A méretmódosítás-kérés visszavonva.');
+}
+// felmérés kérése / visszavonása (több elemre is)
+function fmSet(v, note) {
+  if (!ME) { askName(() => fmSet(v, note)); return; }
+  const T = [...SEL].map(k => BYK.get(k)).filter(Boolean).filter(e => reqOpen(e, 'fm') !== !!v);
+  if (!T.length) { toast(v ? 'Már mind felmérésre kérve.' : 'Nincs visszavonható felmérés-kérés.'); return; }
+  if (v && note == null) { dlg('<h3>Felmérés kérése · ' + T.length + ' elem</h3><p class="note">A tervező a helyszíni mérés után adja ki (újra) az elemet. Írd le, mit és miért kell felmérni.</p><label for="ntIn">Megjegyzés</label><textarea id="ntIn" rows="3" maxlength="300" placeholder="pl. a falsík síkhibája miatt a végleges szélesség csak helyszínen mérhető"></textarea><div class="row"><button class="btn pri" type="button" data-d="note">Kérés rögzítése</button><button class="btn" type="button" data-d="x">Mégse</button></div>'); askNote.then = n => fmSet(1, n); setTimeout(() => $('ntIn').focus(), 30); return; }
+  addEv(T.map(e => ({ k: e.kulcs, f: 'fm', v: v ? 1 : 0, note: v ? note : 'kérés visszavonva' }))); toast((v ? 'Felmérés kérve · ' : 'Felmérés-kérés visszavonva · ') + T.length + ' elem');
+}
+function reqList() { const L = []; for (const e of EL) { const m = reqOpen(e, 'mm'), f = reqOpen(e, 'fm'); if (m || f) L.push({ e: e, m: m, f: f }); } return L; }
+
+// ---- 3D ----
+const cv = $('cv'), ctx = cv.getContext('2d'); let DPR = 1, W = 0, H = 0, DRAWN = [];
+function resize() { const r = cv.getBoundingClientRect(), W0 = W, H0 = H; DPR = Math.min(2, window.devicePixelRatio || 1); W = r.width; H = r.height; if (CAM.fit && W0 >= 10 && H0 >= 10) { if (Math.abs(W - W0) < 0.5) CAM.oy -= (H - H0) / 2; else CAM.fit = false; } cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR); draw(); }
+function proj(p) { const dx = p[0] - CAM.c[0], dy = p[1] - CAM.c[1], dz = p[2] - CAM.c[2], c = Math.cos(CAM.phi), s = Math.sin(CAM.phi), xr = dx * c - dy * s, yr = dx * s + dy * c, ct = Math.cos(CAM.th), st = Math.sin(CAM.th); return [W / 2 + CAM.ox + xr * CAM.s, H / 2 + CAM.oy + (-dz * ct - yr * st) * CAM.s, -yr * ct + dz * st]; } // a néző a −y oldalon, felülről: jobbra +x, a távolabbi (nagyobb y) feljebb; a harmadik érték a nézőhöz való közelség
+function fit() {
+  if (!EL.length || W < 10 || H < 10) return; const FE = EL; let x0 = Infinity, y0 = Infinity, z0 = Infinity, x1 = -Infinity, y1 = -Infinity, z1 = -Infinity;
+  for (const e of FE) for (const p of e.pts) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); z0 = Math.min(z0, p[2]); z1 = Math.max(z1, p[2]); }
+  CAM.c = [(x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2]; CAM.s = 1; CAM.ox = CAM.oy = 0;
+  let a = Infinity, b = -Infinity, cc = Infinity, d = -Infinity; for (const e of FE) for (const p of e.pts) { const q = proj(p); a = Math.min(a, q[0]); b = Math.max(b, q[0]); cc = Math.min(cc, q[1]); d = Math.max(d, q[1]); }
+  CAM.s = 0.9 * Math.min(W / Math.max(1, b - a), H / Math.max(1, d - cc)); CAM.ox = CAM.oy = 0; let a2 = Infinity, b2 = -Infinity, c2 = Infinity, d2 = -Infinity; for (const e of FE) for (const p of e.pts) { const q = proj(p); a2 = Math.min(a2, q[0]); b2 = Math.max(b2, q[0]); c2 = Math.min(c2, q[1]); d2 = Math.max(d2, q[1]); }
+  CAM.ox = W / 2 - (a2 + b2) / 2; CAM.oy = H / 2 - (c2 + d2) / 2; CAM.fit = true;
+}
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function colOf(e) {
+  const s = stOf(e.kulcs);
+  if (VIEW === 'hs') return s.hs === 2 ? ['#1f7a3e', 0.95] : s.hs === 1 ? ['#a8e598', 0.95] : HSONLY ? ['#6d8396', 0.05, 1] : ['#6d8396', 0.35];
+  if (reqOpen(e, 'mm') || reqOpen(e, 'fm')) return ['#ff5800', 1, 0, s.ps ? 1 : 0]; // kérés (méretmódosítás / felmérés): narancs, a még nem szerelhető is; már felszerelt elemen fehér sraffozással – mint a Kígyó Panel szerelés nézetében
+  if (s.ps) return ['#2ebe5a', 0.95]; if (s.hs === 2) return ['#9fb3c3', 0.85]; return SHOWALL ? ['#6d8396', 0.3] : ['#6d8396', 0.05, 1]; // még nem szerelhető: halvány körvonal (nem jelölhető), hogy az épület mindig látsszon
+}
+// felirat a tábla saját közepére – a Kígyó panelLabel szabályai: jel és méret (szélesség × magasság, trapéznál alsó/felső); keskeny, magas táblán három sorban;
+// a tételszám a méret fölött (ha ott nincs hely, alatta); ha nem fér, csak a méret. Sraffozott táblán a feliratok alatt egy közös, a tábla kontúrjára vágott alapszínű téglalap.
+let LAB = (() => { const v = LS.get('kk-lab'); return ['jm', 'j', 'tm', 'm', 'none'].includes(v) ? v : 'jm'; })(); // a kivitelezés a beégetett jelet látja, tételszámot nem
+const LAB_N = { jm: 'jel + méret', j: 'csak jel', tm: 'tételszám + méret (felcserélhetőség)', m: 'csak méret', none: 'nincs felirat' };
+const szOf = e => { const m = /(\d+(?:\/\d+)?) × (\d+)/.exec(e.meret || ''); return m ? [m[1], m[2]] : null; };
+function panelLabel(q, e, col, halo, wide) {
+  if (LAB === 'none') return;
+  let id = LAB === 'm' ? null : LAB === 'tm' ? e.tetel : e.jel, sz = LAB === 'j' ? null : szOf(e), id2 = null;
+  if (!id && !sz) return;
+  let cx = 0, cy = 0, y0 = Infinity, y1 = -Infinity;
+  for (const v of q) { cx += v[0]; cy += v[1]; y0 = Math.min(y0, v[1]); y1 = Math.max(y1, v[1]); }
+  cx /= q.length; cy /= q.length;
+  let xa = Infinity, xb = -Infinity;
+  for (let i = 0; i < q.length; i++) { const a = q[i], b = q[(i + 1) % q.length]; if ((a[1] - cy) * (b[1] - cy) <= 0 && a[1] !== b[1]) { const x = a[0] + (b[0] - a[0]) * (cy - a[1]) / (b[1] - a[1]); xa = Math.min(xa, x); xb = Math.max(xb, x); } }
+  const wx = xb - xa; if (!(wx > 0)) return;
+  const mx = (xa + xb) / 2;
+  let ya = y0, yb = y1; { let lo = Infinity, hi = -Infinity; for (let i = 0; i < q.length; i++) { const a = q[i], b = q[(i + 1) % q.length]; if ((a[0] - mx) * (b[0] - mx) <= 0 && a[0] !== b[0]) { const y = a[1] + (b[1] - a[1]) * (mx - a[0]) / (b[0] - a[0]); lo = Math.min(lo, y); hi = Math.max(hi, y); } } if (hi > lo) { ya = lo; yb = hi; } }
+  const hy = yb - ya, hB = y1 - y0, fs = wx > 46 && hB > 26 ? 11 : 9.5, FN = css('--font-num'), F = w => w + ' ' + fs + 'px ' + FN, rgbA = a => col.replace('1)', a + ')');
+  ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  if (halo && !wide) { ctx.strokeStyle = halo; ctx.lineWidth = 3.5; ctx.lineJoin = 'round'; }
+  const Q = [], put = (t, x, y) => { if (wide) { Q.push([t, x, y, ctx.font, ctx.fillStyle]); return; } if (halo) ctx.strokeText(t, x, y); ctx.fillText(t, x, y); };
+  let top = cy, bot = cy, shown = false;
+  if (sz) {
+    ctx.font = F(600); const w1 = ctx.measureText(sz[0]).width, w2 = ctx.measureText(sz[1]).width, lh = fs * 1.22, gx = fs * 0.95, line = sz[0] + ' × ' + sz[1], wl = ctx.measureText(line).width, blockH = lh * 2 + gx;
+    if (wx >= Math.max(w1, w2) + 6 && hy >= blockH + 6) { const c = Math.min(Math.max(cy, ya + blockH / 2 + 3), yb - blockH / 2 - 3); ctx.fillStyle = rgbA(0.85); put(sz[0], mx, c - gx / 2 - lh / 2 + 0.5); put(sz[1], mx, c + gx / 2 + lh / 2 + 0.5); ctx.font = F(500); ctx.fillStyle = rgbA(0.55); put('×', mx, c + 0.5); top = c - blockH / 2; bot = c + blockH / 2; shown = true; }
+    else if (wx >= wl + 6 && hB >= fs + 5) { ctx.fillStyle = rgbA(0.85); put(line, mx, cy + 0.5); top = cy - fs * 0.6; bot = cy + fs * 0.6; shown = true; }
+  }
+  if (id2) { ctx.font = F(500); const tw = ctx.measureText(id2).width; if (wx >= tw + 6 && hB >= fs * 3 + 8) { ctx.fillStyle = rgbA(0.6); put(id2, mx, cy + fs * 0.75 + 0.5); top = cy - fs * 0.15; bot = cy + fs * 1.4; shown = true; } }
+  if (id) {
+    const fi = shown ? Math.max(9, fs - 0.5) : fs; ctx.font = (shown ? '700 ' : '600 ') + fi + 'px ' + FN;
+    const tw = ctx.measureText(id).width, gap = id2 ? fi * 0.9 : fi * 1.5, gmin = fi * 0.8; let y = null;
+    if (wx >= tw + 6) { if (!shown) { if (hB >= fi + 5) y = cy; } else if (top - ya >= fi + gmin + 4) y = Math.max(ya + fi / 2 + 3, top - gap - fi / 2); else if (yb - bot >= fi + gmin + 4) y = Math.min(yb - fi / 2 - 3, bot + gap + fi / 2); }
+    if (y != null) { ctx.fillStyle = rgbA(shown ? 0.95 : 0.8); put(id, mx, y + 0.5); }
+  }
+  if (Q.length) { let bx0 = Infinity, bx1 = -Infinity, by0 = Infinity, by1 = -Infinity; for (const a of Q) { ctx.font = a[3]; const m = ctx.measureText(a[0]), h = (+(/(\d+(?:\.\d+)?)px/.exec(a[3]) || [0, 11])[1]) * 0.62; bx0 = Math.min(bx0, a[1] - m.width / 2); bx1 = Math.max(bx1, a[1] + m.width / 2); by0 = Math.min(by0, a[2] - h); by1 = Math.max(by1, a[2] + h); }
+    const pd = 5; ctx.save(); ctx.beginPath(); q.forEach((v, i) => (i ? ctx.lineTo(v[0], v[1]) : ctx.moveTo(v[0], v[1]))); ctx.closePath(); ctx.clip(); ctx.fillStyle = halo; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(bx0 - pd, by0 - pd + 1, bx1 - bx0 + 2 * pd, by1 - by0 + 2 * pd - 1, 3); else ctx.rect(bx0 - pd, by0 - pd + 1, bx1 - bx0 + 2 * pd, by1 - by0 + 2 * pd - 1); ctx.fill(); ctx.restore();
+    for (const a of Q) { ctx.font = a[3]; ctx.fillStyle = a[4]; ctx.fillText(a[0], a[1], a[2]); } }
+  ctx.restore();
+}
+function draw() {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.clearRect(0, 0, W, H); DRAWN = [];
+  if (!EL.length || W < 10 || H < 10) return; if (!CAM.fit) fit();
+  const L = []; for (const e of EL) { const c = colOf(e); if (!c) continue; const P = e.pts.map(proj); let d = 0; for (const q of P) d += q[2]; L.push({ e: e, P: P, d: d / P.length, c: c }); }
+  L.sort((a, b) => a.d - b.d); // a d a nézőhöz való közelség: előbb a távoliak, a közeliek rájuk
+  const ink = css('--ink'), acc = css('--accent'), inkA = (h => { const m = /^#?([0-9a-f]{6})$/i.exec(h); if (!m) return 'rgba(20,30,40,1)'; const n = parseInt(m[1], 16); return 'rgba(' + (n >> 16) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',1)'; })(ink);
+  ctx.font = '600 11px ' + css('--font-num'); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const o of L) {
+    const sel = SEL.has(o.e.kulcs), fl = flagged(o.e), path = () => { ctx.beginPath(); o.P.forEach((q, i) => (i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]))); ctx.closePath(); };
+    path(); ctx.globalAlpha = o.c[1]; ctx.fillStyle = sel ? acc : o.c[0]; ctx.fill(); ctx.globalAlpha = 1;
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, cx = 0, cy = 0; for (const q of o.P) { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); cx += q[0]; cy += q[1]; } cx /= o.P.length; cy /= o.P.length;
+    if (o.c[3] && !sel) { ctx.save(); path(); ctx.clip(); const h = y1 - y0; ctx.beginPath(); for (let x = x0 - h; x < x1; x += 12) { ctx.moveTo(x, y1); ctx.lineTo(x + h, y0); } ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke(); ctx.restore(); path(); } // már felszerelt elemre kért módosítás: fehér sraff
+    const rq = VIEW === 'hs' && (reqOpen(o.e, 'mm') || reqOpen(o.e, 'fm')), hl = HLT && o.e.tetel === HLT && !sel, gh = o.c[2] && !fl && !sel && !hl;
+    if (hl) { ctx.globalAlpha = 0.28; ctx.fillStyle = '#7a4dff'; ctx.fill(); ctx.globalAlpha = 1; ctx.lineWidth = 2.6; ctx.strokeStyle = '#7a4dff'; ctx.stroke(); DRAWN.push(o); continue; }
+    if (rq && !fl && !sel) { ctx.setLineDash([6, 4]); ctx.lineWidth = 2.2; ctx.strokeStyle = '#ff5800'; ctx.stroke(); ctx.setLineDash([]); }
+    else { ctx.lineWidth = fl ? 3 : sel ? 2 : gh ? 0.6 : 0.8; ctx.strokeStyle = fl ? '#ff5800' : sel ? acc : gh ? 'rgba(70,90,110,.16)' : 'rgba(10,20,30,.55)'; ctx.stroke(); }
+    DRAWN.push(o);
+    if (o.c[2]) continue; // felirat a saját táblán, a rajzolási sorrendben (a közelebbi tábla eltakarja)
+    const or = o.c[0] === '#ff5800' && !sel, dark = sel || or || o.c[0] === '#a8e598' || o.c[0] === '#2ebe5a' || o.c[0] === '#9fb3c3';
+    panelLabel(o.P, o.e, dark ? 'rgba(27,21,0,1)' : (o.c[0] === '#1f7a3e' ? 'rgba(232,245,236,1)' : inkA), o.c[3] && !sel ? '#ff5800' : null, !!(o.c[3] && !sel));
+  }
+}
+function inPoly(x, y, P) { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const a = P[i], b = P[j]; if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; }
+function pick(x, y) { for (let i = DRAWN.length - 1; i >= 0; i--) if ((!DRAWN[i].c[2] || (HLT && DRAWN[i].e.tetel === HLT) || reqOpen(DRAWN[i].e, 'mm') || reqOpen(DRAWN[i].e, 'fm')) && inPoly(x, y, DRAWN[i].P)) return DRAWN[i].e; return null; }
+// gesztusok: egy ujj / bal gomb forgat, két ujj nagyít és tol, görgő nagyít, jobb gomb / Shift tol; koppintás kijelöl
+function unproj(x, y) { const u = (x - W / 2 - CAM.ox) / CAM.s, v = (y - H / 2 - CAM.oy) / CAM.s, ct = Math.cos(CAM.th), st = Math.sin(CAM.th), c = Math.cos(CAM.phi), s = Math.sin(CAM.phi), yr = -v * st, dz = -v * ct; return [CAM.c[0] + u * c + yr * s, CAM.c[1] - u * s + yr * c, CAM.c[2] + dz]; } // a forgatási középpont mélységében
+function hitPoint(x, y) { // a kurzor alatti felület 3D pontja (halvány elemen is), különben a képernyőpont a középpont mélységében
+  for (let i = DRAWN.length - 1; i >= 0; i--) { const o = DRAWN[i]; if (!inPoly(x, y, o.P)) continue; const S = o.P, Q = o.e.pts; for (let k = 1; k + 1 < S.length; k++) { const ax = S[k][0] - S[0][0], ay = S[k][1] - S[0][1], bx = S[k + 1][0] - S[0][0], by = S[k + 1][1] - S[0][1], det = ax * by - ay * bx; if (Math.abs(det) < 1e-6) continue; const rx = x - S[0][0], ry = y - S[0][1], a = (rx * by - ry * bx) / det, b = (ax * ry - ay * rx) / det; return [0, 1, 2].map(j => Q[0][j] + a * (Q[k][j] - Q[0][j]) + b * (Q[k + 1][j] - Q[0][j])); } }
+  return unproj(x, y);
+}
+function setPivot(x, y) { if (!EL.length || W < 10) return; const p = hitPoint(x, y), q = proj(p); CAM.c = p; CAM.ox = q[0] - W / 2; CAM.oy = q[1] - H / 2; } // a kép nem mozdul, csak a forgatás középpontja kerül az ujj alá
+const PT = new Map(); let G = null;
+cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); PT.set(e.pointerId, [e.offsetX, e.offsetY]); if (PT.size === 1) { G = { x: e.offsetX, y: e.offsetY, moved: false, pan: e.button === 2 || e.shiftKey }; if (!G.pan) setPivot(e.offsetX, e.offsetY); } else if (PT.size === 2) { const [a, b] = [...PT.values()]; G = { two: true, d: Math.hypot(a[0] - b[0], a[1] - b[1]), mx: (a[0] + b[0]) / 2, my: (a[1] + b[1]) / 2, moved: true }; } });
+cv.addEventListener('pointermove', e => {
+  if (!PT.has(e.pointerId) || !G) return; const prev = PT.get(e.pointerId); PT.set(e.pointerId, [e.offsetX, e.offsetY]);
+  if (G.two && PT.size >= 2) { const [a, b] = [...PT.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]), mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2; zoomAt(mx, my, d / Math.max(1, G.d)); CAM.ox += mx - G.mx; CAM.oy += my - G.my; G.d = d; G.mx = mx; G.my = my; draw(); return; }
+  const dx = e.offsetX - prev[0], dy = e.offsetY - prev[1]; if (Math.hypot(e.offsetX - G.x, e.offsetY - G.y) > 6) G.moved = true; if (!G.moved) return;
+  if (G.pan) { CAM.ox += dx; CAM.oy += dy; } else { CAM.phi += dx * 0.008; CAM.th = Math.max(0.02, Math.min(1.5, CAM.th + dy * 0.006)); }
+  draw();
+});
+const up = e => { const g = G; PT.delete(e.pointerId); if (PT.size === 0) { if (g && !g.moved) tap(e.offsetX, e.offsetY); G = null; } else if (PT.size === 1) { const r = [...PT.values()][0]; G = { x: r[0], y: r[1], moved: true, pan: false }; setPivot(r[0], r[1]); } }; // két ujjról egyre: a maradó ujj innen forgat, ugrás nélkül
+cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', e => { PT.delete(e.pointerId); if (!PT.size) G = null; });
+cv.addEventListener('contextmenu', e => e.preventDefault());
+function zoomAt(x, y, f) { const ox = x - W / 2 - CAM.ox, oy = y - H / 2 - CAM.oy; CAM.s *= f; CAM.ox -= ox * (f - 1); CAM.oy -= oy * (f - 1); }
+cv.addEventListener('wheel', e => { e.preventDefault(); zoomAt(e.offsetX, e.offsetY, Math.exp(-e.deltaY * 0.0015)); draw(); }, { passive: false });
+function tap(x, y) { const e = pick(x, y); if (!e) { SEL.clear(); } else if (MULTI) { if (SEL.has(e.kulcs)) SEL.delete(e.kulcs); else SEL.add(e.kulcs); } else { SEL.clear(); SEL.add(e.kulcs); } ui(); }
+// ---- felület ----
+function counts() { let hs1 = 0, hs2 = 0, ps = 0, ok = 0, fl = 0; for (const e of EL) { const s = stOf(e.kulcs); if (s.hs === 1) hs1++; if (s.hs === 2) { hs2++; ok++; } if (s.ps) ps++; if (flagged(e)) fl++; } return { hs1, hs2, ps, ok, fl, n: EL.length }; }
+function hist(k) { return EV.filter(x => x.k === k).sort((a, b) => b.at.localeCompare(a.at)); }
+const fmtT = t => { try { const d = new Date(t); return d.toLocaleString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch (e) { return t; } };
+const evTxt = x => x.f === 'ack' ? 'tervmódosítás tudomásul véve' : x.f === 'mm' ? (x.v ? 'méretmódosítást kért' + (x.mm ? ': ' + x.mm.o + ' → ' + x.mm.r : '') : 'méretmódosítás-kérés visszavonva') : x.f === 'fm' ? (x.v ? 'felmérést kért' : 'felmérés-kérés visszavonva') : (STN[x.f] || [])[x.v] || '';
+function ui() {
+  $('empty').hidden = !!PKG; if (SP.on && !PKG) $('emptyTxt').innerHTML = SP.err === 'nopkg' ? 'A ' + esc(KK_CFG.lib) + ' tárban még nincs kiadási csomag. <button class="btn pri" type="button" data-a="spUp">Csomag feltöltése (tervező)…</button>' : SP.err === 'missing' ? 'A SharePoint-webhelyen hiányzik: ' + esc(SP.miss.join(', ')) + '. Ha te vagy a webhely tulajdonosa, az app létrehozza. <button class="btn pri" type="button" data-a="spSetup">Létrehozás</button>' : SP.err === 'login' ? 'Jelentkezz be a céges Microsoft 365-fiókoddal. <button class="btn pri" type="button" data-a="spLogin">Bejelentkezés</button>' : SP.err ? 'SharePoint: ' + esc(SP.err) : 'Kiadás betöltése a SharePointról…'; $('sub').textContent = PKG ? (PKG.projekt || '') + ' · rev. ' + PKG.rev + ' · ' + EL.length + ' elem' + (ME ? ' · ' + ME : '') : 'nincs kiadás betöltve';
+  for (const b of document.querySelectorAll('.hd .seg button')) b.setAttribute('aria-pressed', String(b.dataset.v === VIEW));
+  $('btnMulti').setAttribute('aria-pressed', String(MULTI)); $('btnMulti').style.borderColor = MULTI ? 'var(--accent)' : '';
+  const c = counts();
+  $('bar').innerHTML = !PKG ? '' : VIEW === 'hs' ? '<b>Háttérszerkezet</b> · ' + c.hs1 + ' konzol · ' + c.hs2 + ' profil · ' + (c.n - c.hs1 - c.hs2) + ' szereletlen' + (c.fl ? ' · <span class="warn">' + c.fl + ' tervmódosítás</span>' : '') : '<b>Panel</b> · ' + c.ps + ' felszerelve · ' + (c.ok - c.ps) + ' szerelhető · ' + (c.n - c.ok) + ' még nem szerelhető' + (c.fl ? ' · <span class="warn">' + c.fl + ' tervmódosítás</span>' : '');
+  const RQ = PKG ? reqList() : []; { const us = PKG ? unsent() : 0; if (us && !(SP.ready && !SP.err)) $('bar').innerHTML += ' · <span class="warn">' + us + ' nem elküldött</span>'; } if (PKG) $('bar').innerHTML += spBar(); if (HLT) $('bar').innerHTML += ' · <span style="color:#7a4dff;font-weight:600">' + esc(HLT) + ' kiemelve</span>'; if (RQ.length) $('bar').innerHTML += ' · <span class="warn">' + RQ.length + ' nyitott kérés</span>';
+  const T = [...SEL].map(k => BYK.get(k)).filter(Boolean); let h = '';
+  if (!PKG) h = '<p class="note">Nincs betöltött kiadás.</p>';
+  else if (!T.length) { const F = EL.filter(flagged); const us = unsent(), gone = (PKG.megszunt || []).filter(g => { const t = stOf(g.kulcs); return t.ps || t.hs; }); h = (us && SP.on && !SP.err ? '' : us ? '<div class="chg"><b>' + us + ' jelölés még nem jutott el a tervezőhöz.</b> ' + (SP.on ? 'Kapcsolatkor automatikusan felmegy. <button class="btn sm mm" type="button" data-a="spSync">Küldés most</button></div>' : '<button class="btn sm mm" type="button" data-a="export">Napló mentése</button></div>') : '') + (gone.length ? '<div class="chg"><b>' + gone.length + ' megszűnt elemen van szerelési jelölés</b> – ' + esc(gone.slice(0, 6).map(g => g.jel + (stOf(g.kulcs).ps ? ' (bontandó)' : '')).join(', ')) + (gone.length > 6 ? ' …' : '') + '. Részletek a menüben.</div>' : '') + '<h2>' + (VIEW === 'hs' ? 'Háttérszerkezet szerelés' : 'Panel szerelés') + '</h2><div class="srch"><input id="q" type="search" inputmode="search" autocomplete="off" spellcheck="false" placeholder="Keresés: jel (F1 8.3), tételszám vagy kód" value="' + esc(QS) + '"><div class="rq" id="qr">' + srchHtml(QS) + '</div></div><p class="note">Koppints egy elemre; többhöz a <b>négyzetrács</b> gomb. Húzás: forgatás · két ujj: nagyítás.</p>' + (F.length ? '<div class="chg"><b>' + F.length + ' elem mérete a rev. ' + PKG.rev + '-ben változott</b>, pedig már jelölve volt. Koppints rá, és nyugtázd.</div><details class="sec"><summary>Módosult elemek · ' + F.length + '</summary><div class="rq">' + F.slice(0, 30).map(e => '<button type="button" class="fl" data-a="go" data-k="' + esc(e.kulcs) + '"><b>' + esc(e.jel) + '</b><small>' + esc(e.meret || '') + (e.indoklas ? ' · ' + esc(e.indoklas) : '') + '</small></button>').join('') + '</div></details>' : '') +
+      (RQ.length ? '<details class="sec"><summary>Nyitott kérések a tervezőnek · ' + RQ.length + '</summary><div class="rq">' + RQ.slice(0, 60).map(r => { const s = stOf(r.e.kulcs); return '<button type="button" data-a="go" data-k="' + esc(r.e.kulcs) + '"><b>' + esc(r.e.jel) + '</b> · ' + (r.m ? 'méretmódosítás' : '') + (r.m && r.f ? ' + ' : '') + (r.f ? 'felmérés' : '') + '<small>' + (r.m && s.mm.mm ? esc(s.mm.mm.o + ' → ' + s.mm.mm.r) + ' · ' : '') + esc((r.m ? s.mm : s.fm).by || '') + ' · ' + esc(fmtT((r.m ? s.mm : s.fm).at)) + '</small></button>'; }).join('') + '</div></details>' : ''); }
+  else {
+    const one = T.length === 1 ? T[0] : null, s = one ? stOf(one.kulcs) : null;
+    h = one ? '<h2>' + esc(one.jel) + '</h2><div class="sub">' + esc(one.meret || '') + ' · ' + esc(one.fal || '') + ' · kiadva rev. ' + one.rev + (one.valtozas && one.rev === PKG.rev ? ' (' + one.valtozas + ')' : '') + '</div>' + swapHtml(one) +
+      '<div>' + (s.hs ? '<span class="chip h' + s.hs + '">' + STN.hs[s.hs] + '</span>' : '<span class="chip">szereletlen</span>') + (s.ps ? '<span class="chip on">panel felszerelve</span>' : '') + (one.felmeros ? '<span class="chip" style="border-color:#f28c28;color:#f28c28">felmérős – helyszíni mérés után gyártják</span>' : '') + '</div>'
+      : '<h2>' + T.length + ' elem kijelölve</h2><div class="sub">' + esc(T.slice(0, 8).map(e => e.jel).join(', ')) + (T.length > 8 ? ' …' : '') + '</div>' + (() => { let h1 = 0, h2 = 0, ps = 0, fm = 0, rv = 0; for (const e of T) { const t = stOf(e.kulcs); if (t.hs === 1) h1++; if (t.hs === 2) h2++; if (t.ps) ps++; if (e.felmeros) fm++; if (isRv(e.kulcs)) rv++; } return '<ul class="list"><li>Konzol: ' + h1 + ' · profil: ' + h2 + ' · szereletlen: ' + (T.length - h1 - h2) + '</li><li>Panel felszerelve: ' + ps + '</li>' + (fm ? '<li>Felmérős: ' + fm + '</li>' : '') + (rv ? '<li>Ebből káva: ' + rv + '</li>' : '') + '</ul>'; })();
+    if (one && flagged(one)) h += '<div class="chg"><b>Tervmódosítás a rev. ' + PKG.rev + '-ben</b> – az elemen már volt szerelési jelölés.' + (one.indoklas ? '<br>' + esc(one.indoklas) : '') + '<div class="acts"><button class="btn mm" type="button" data-a="ack">Tudomásul vettem</button></div></div>';
+    h += VIEW === 'hs' ? '<div class="acts"><button class="btn h1" type="button" data-a="hs" data-v="1">Konzol fent</button><button class="btn h2" type="button" data-a="hs" data-v="2">Profil fent</button><button class="btn" type="button" data-a="hs" data-v="0">Szereletlen</button></div>'
+      : '<div class="acts"><button class="btn ok pri" type="button" data-a="ps" data-v="1">Panel felszerelve</button><button class="btn" type="button" data-a="ps" data-v="0">Nincs felszerelve</button></div>';
+    { const om = one && reqOpen(one, 'mm'), fmN = T.filter(e => reqOpen(e, 'fm')).length, sm = one ? stOf(one.kulcs) : null;
+      h += '<h3 class="sec">Kérés a tervezőnek</h3>';
+      if (om) h += '<div class="req"><b>Méretmódosítás kérve</b> · ' + esc(sm.mm.by || '') + ' · ' + esc(fmtT(sm.mm.at)) + '<div class="mono">' + esc(sm.mm.mm ? sm.mm.mm.o + ' → ' + sm.mm.mm.r : '') + '</div>' + (sm.mm.mm && sm.mm.mm.ch ? '<div class="note">' + esc(sm.mm.mm.ch) + '</div>' : '') + (sm.mm.note ? '<div class="note"><i>' + esc(sm.mm.note) + '</i></div>' : '') + '</div>';
+      if (one && reqOpen(one, 'fm')) h += '<div class="req"><b>Felmérés kérve</b> · ' + esc(sm.fm.by || '') + ' · ' + esc(fmtT(sm.fm.at)) + (sm.fm.note ? '<div class="note"><i>' + esc(sm.fm.note) + '</i></div>' : '') + '</div>';
+      else if (!one && fmN) h += '<p class="note">' + fmN + ' kijelölt elemre már van felmérés-kérés.</p>';
+      h += '<div class="acts">' + (one ? '<button class="btn mm" type="button" data-a="mm">' + (om ? 'Kérés módosítása' : 'Méretmódosítás kérése') + '</button>' : '') + (om ? '<button class="btn" type="button" data-a="mmDel">Méretkérés visszavonása</button>' : '') +
+        (fmN < T.length ? '<button class="btn mm" type="button" data-a="fmOn">Felmérés kérése' + (T.length > 1 ? ' (' + (T.length - fmN) + ')' : '') + '</button>' : '') + (fmN ? '<button class="btn" type="button" data-a="fmOff">Felmérés-kérés visszavonása' + (T.length > 1 ? ' (' + fmN + ')' : '') + '</button>' : '') + '</div>'; }
+    if (one) { const L = hist(one.kulcs); h += '<details' + (L.length ? ' open' : '') + '><summary>Előzmény · ' + L.length + '</summary><ul class="hist">' + (L.length ? L.map(x => '<li><time>' + esc(fmtT(x.at)) + '</time><b>' + esc(x.by || '?') + '</b> · ' + esc(evTxt(x)) + ' <i>(rev. ' + x.rev + ')</i>' + (x.note ? '<br><i>' + esc(x.note) + '</i>' : '') + '</li>').join('') : '<li class="note">Még nincs jelölés.</li>') + '</ul></details>'; }
+  }
+  $('panel').innerHTML = h; draw();
+}
+// ---- események ----
+document.addEventListener('click', e => {
+  const d = e.target.closest('[data-d]'); if (d) { const a = d.dataset.d; if (a === 'x') closeDlg(); else if (a === 'name') { const v = $('nmIn').value.trim().slice(0, 60); if (!v) { toast('Add meg a neved.'); return; } ME = v; LS.set('kk-me', v); closeDlg(); ui(); if (askName.then) { const t = askName.then; askName.then = null; t(); } } else if (a === 'note') { const v = $('ntIn').value.trim(); if (!v) { toast('Írj indoklást.'); return; } closeDlg(); if (askNote.then) { const t = askNote.then; askNote.then = null; t(v); } } return; }
+  if (e.target === $('ov')) { closeDlg(); return; }
+  const b = e.target.closest('[data-a]'); if (!b || b.disabled) return; const a = b.dataset.a;
+  if (a === 'load') { closeDlg(); $('fileIn').click(); }
+  else if (a === 'export') { closeDlg(); exportLog(); }
+  else if (a === 'name') { askName(null); }
+  else if (a === 'all') { SHOWALL = !SHOWALL; closeDlg(); ui(); }
+  else if (a === 'lab') { const o = ['jm', 'j', 'tm', 'm', 'none']; LAB = o[(o.indexOf(LAB) + 1) % o.length]; LS.set('kk-lab', LAB); b.textContent = 'Felirat: ' + LAB_N[LAB]; draw(); }
+  else if (a === 'hlT') { const e = BYK.get([...SEL][0]); HLT = e && HLT !== e.tetel ? e.tetel : ''; ui(); }
+  else if (a === 'hsonly') { HSONLY = !HSONLY; closeDlg(); ui(); }
+  else if (a === 'fit') { CAM.fit = false; draw(); }
+  else if (a === 'multi') { MULTI = !MULTI; ui(); toast(MULTI ? 'Több elem: koppintással adsz hozzá és veszel el' : 'Egy elem kijelölése'); }
+  else if (a === 'hs' || a === 'ps') setSt(a, +b.dataset.v);
+  else if (a === 'mm') { const k = [...SEL][0]; if (k) mmOpen(k); }
+  else if (a === 'mmDel') { const k = [...SEL][0]; if (k) mmDel(k); }
+  else if (a === 'fmOn') fmSet(1);
+  else if (a === 'fmOff') fmSet(0);
+  else if (a === 'go') goTo(b.dataset.k);
+  else if (a === 'spSync') { closeDlg(); spSync(); }
+  else if (a === 'spLogin') { closeDlg(); spLogin(); }
+  else if (a === 'spSetup') { spSetup(); }
+  else if (a === 'spOpen') { closeDlg(); spOpen(b.dataset.id).catch(er => toast('Nem tölthető be: ' + er.message, 5000)); }
+  else if (a === 'spUp') { if (!$('ov').hidden) closeDlg(); $('spUpIn').click(); }
+  else if (a === 'ack') { if (!ME) { askName(() => b.click()); return; } addEv([...SEL].filter(k => BYK.get(k) && flagged(BYK.get(k))).map(k => ({ k: k, f: 'ack', v: 1 }))); toast('Nyugtázva'); }
+});
+for (const b of document.querySelectorAll('.hd .seg button')) b.addEventListener('click', () => { VIEW = b.dataset.v; CAM.fit = false; ui(); });
+$('btnMenu').addEventListener('click', menu);
+$('fileIn').addEventListener('change', () => { const f = $('fileIn').files[0]; if (!f) return; const r = new FileReader(); r.onload = () => loadPkg(String(r.result || '')); r.readAsText(f); $('fileIn').value = ''; });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (MM.on) mmClose(); else if (!$('ov').hidden) closeDlg(); else { SEL.clear(); ui(); } } if (e.key === 'Enter' && !$('ov').hidden && e.target.id === 'nmIn') { e.preventDefault(); document.querySelector('[data-d="name"]').click(); } });
+const st = $('stage'); st.addEventListener('dragover', e => e.preventDefault()); st.addEventListener('drop', e => { e.preventDefault(); const f = e.dataTransfer.files && e.dataTransfer.files[0]; if (f) { const r = new FileReader(); r.onload = () => loadPkg(String(r.result || '')); r.readAsText(f); } });
+window.addEventListener('resize', resize); try { new ResizeObserver(() => { const r = cv.getBoundingClientRect(); if (Math.abs(r.width - W) > 0.5 || Math.abs(r.height - H) > 0.5) resize(); }).observe(cv); } catch (e) {}
+// ---- SharePoint-szinkron (M365). Csak akkor kapcsol be, ha az oldal előtt window.KK_CFG ki van töltve (a céges, Azure-on hosztolt változat);
+// a Claude-os előnézetben és KK_CFG nélkül fájlos mód marad. Az események csak hozzáírással kerülnek a listára; a szerzőt a SharePoint adja. ----
+const KK_CFG = Object.assign({ tenantId: '', clientId: '', siteHost: '', sitePath: '', lib: 'Kiadasok', list: 'Esemenyek', scopes: 'selected' }, window.KK_CFG || {}); // scopes: 'selected' = céges (Sites.Selected, IT adja ki); 'all' = saját próba (Sites.ReadWrite.All, rendszergazda nélkül is jóváhagyható)
+const SP = { on: !!(KK_CFG.clientId && KK_CFG.tenantId && KK_CFG.siteHost), ready: false, acct: null, site: null, drive: null, list: null, busy: false, last: '', err: '', pk: [], t: 0 };
+const GRAPH = 'https://graph.microsoft.com/v1.0', SCOPES = ['https://graph.microsoft.com/User.Read', 'https://graph.microsoft.com/' + (KK_CFG.scopes === 'all' ? 'Sites.ReadWrite.All' : 'Sites.Selected')];
+const MSAL_SRC = ['https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.39.0/lib/msal-browser.min.js', 'https://unpkg.com/@azure/msal-browser@2.39.0/lib/msal-browser.min.js'];
+let MSAL = null;
+function loadScript(list) { return new Promise((res, rej) => { let i = 0; const t = () => { if (window.msal) { res(window.msal); return; } if (i >= list.length) { rej(new Error('a bejelentkező könyvtár nem tölthető be')); return; } const s = document.createElement('script'); s.src = list[i++]; s.onload = t; s.onerror = t; document.head.appendChild(s); }; t(); }); }
+async function spToken() {
+  if (typeof window.__kkToken === 'function') return window.__kkToken(); // teszt
+  const req = { scopes: SCOPES, account: SP.acct };
+  try { return (await MSAL.acquireTokenSilent(req)).accessToken; } catch (e) { await MSAL.acquireTokenRedirect(req); throw new Error('újra be kell jelentkezni'); }
+}
+async function gx(path, opt) {
+  opt = opt || {}; const tok = await spToken(), h = Object.assign({ Authorization: 'Bearer ' + tok }, opt.headers || {});
+  const r = await fetch(/^https:/.test(path) ? path : GRAPH + path, { method: opt.method || 'GET', headers: h, body: opt.body });
+  if (!r.ok) { let m = ''; try { const j = await r.json(); m = j && j.error ? j.error.message || j.error.code : ''; } catch (e) {} const er = new Error((r.status === 403 ? 'nincs jogosultság' : r.status === 401 ? 'lejárt bejelentkezés' : 'SharePoint-hiba ' + r.status) + (m ? ': ' + m : '')); er.status = r.status; throw er; }
+  return opt.raw ? r : r.status === 204 ? null : r.json();
+}
+async function spInit() {
+  if (!SP.on) return;
+  try {
+    if (typeof window.__kkToken !== 'function') {
+      await loadScript(MSAL_SRC);
+      MSAL = new window.msal.PublicClientApplication({ auth: { clientId: KK_CFG.clientId, authority: 'https://login.microsoftonline.com/' + KK_CFG.tenantId, redirectUri: location.origin + location.pathname }, cache: { cacheLocation: 'localStorage' } });
+      const res = await MSAL.handleRedirectPromise(); SP.acct = (res && res.account) || MSAL.getAllAccounts()[0] || null;
+      if (!SP.acct) { SP.err = 'login'; ui(); return; }
+    } else SP.acct = window.__kkAcct || { name: 'Teszt' };
+    ME = SP.acct.name || SP.acct.username || ME; LS.set('kk-me', ME);
+    const path = KK_CFG.sitePath ? ':' + (KK_CFG.sitePath[0] === '/' ? '' : '/') + KK_CFG.sitePath : '';
+    SP.site = (await gx('/sites/' + KK_CFG.siteHost + path + '?$select=id')).id;
+    const L = await gx('/sites/' + SP.site + '/lists?$select=id,displayName,name'), D = await gx('/sites/' + SP.site + '/drives?$select=id,name');
+    const li = (L.value || []).find(x => x.displayName === KK_CFG.list || x.name === KK_CFG.list), dr = (D.value || []).find(x => x.name === KK_CFG.lib);
+    if (!li || !dr) { SP.miss = (!li ? [KK_CFG.list + ' lista'] : []).concat(!dr ? [KK_CFG.lib + ' tár'] : []); SP.err = 'missing'; ui(); return; }
+    SP.list = li.id; SP.drive = dr.id; SP.ready = true; SP.err = '';
+    await spPkgs(); if (!PKG && SP.pk.length) await spOpen(SP.pk[0].id); else if (!PKG) { SP.err = 'nopkg'; ui(); } else await spSync();
+  } catch (e) { SP.err = e.message || String(e); ui(); }
+}
+// első beállítás a próbához: a lista (oszlopokkal, indexekkel) és a dokumentumtár létrehozása – csak a webhely tulajdonosa/szerkesztője tudja
+async function spSetup() {
+  try {
+    const L = await gx('/sites/' + SP.site + '/lists?$select=id,displayName,name'), has = n => (L.value || []).some(x => x.displayName === n || x.name === n);
+    const col = (name, def, idx) => Object.assign({ name: name }, def, idx ? { indexed: true } : {});
+    const body = ix => ({ displayName: KK_CFG.list, list: { template: 'genericList' }, columns: [col('Projekt', { text: {} }, ix), col('Kulcs', { text: { maxLength: 40 } }, ix), col('Mezo', { choice: { choices: ['hs', 'ps', 'ack', 'mm', 'fm'] } }), col('Ertek', { number: {} }), col('Rev', { number: {} }), col('Idopont', { dateTime: {} }, ix), col('Megjegyzes', { text: { allowMultipleLines: true } }), col('Adat', { text: { allowMultipleLines: true, textType: 'plain' } })] });
+    if (!has(KK_CFG.list)) { try { await gx('/sites/' + SP.site + '/lists', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body(true)) }); } catch (e) { if (e.status !== 400) throw e; await gx('/sites/' + SP.site + '/lists', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body(false)) }); } }
+    if (!has(KK_CFG.lib)) await gx('/sites/' + SP.site + '/lists', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ displayName: KK_CFG.lib, list: { template: 'documentLibrary' } }) });
+    toast('Létrehozva: ' + KK_CFG.list + ' lista és ' + KK_CFG.lib + ' tár.'); SP.err = ''; await spInit();
+  } catch (e) { toast('A létrehozás nem sikerült: ' + e.message, 6000); }
+}
+async function spLogin() { if (MSAL) await MSAL.loginRedirect({ scopes: SCOPES }); }
+// kiadási csomagok a tárban: projekt + rev a fájlnévből (ZITO_rev2_2026-11-19_14-48.json), a legújabb elöl
+async function spPkgs() {
+  const r = await gx('/drives/' + SP.drive + '/root/children?$select=id,name,lastModifiedDateTime&$top=500');
+  SP.pk = (r.value || []).filter(x => /\.json$/i.test(x.name)).map(x => { const m = /^(.*)_rev(\d+)_/i.exec(x.name) || []; return { id: x.id, name: x.name, proj: m[1] || '', rev: +m[2] || 0, at: x.lastModifiedDateTime }; })
+    .sort((a, b) => (PKG && a.proj === PKG.projekt ? 0 : 1) - (PKG && b.proj === PKG.projekt ? 0 : 1) || b.rev - a.rev || String(b.at).localeCompare(String(a.at)));
+}
+async function spOpen(id) {
+  const r = await gx('/drives/' + SP.drive + '/items/' + id + '/content', { raw: true }), txt = await r.text();
+  if (loadPkg(txt)) await spSync();
+}
+// összefésülés: a listán lévő esemény (azonosító = Title) a SharePointé, a helyi még el nem küldöttek maradnak és felmennek
+async function spPull() {
+  const proj = String(PKG.projekt || '').replace(/'/g, "''"), have = new Map(EV.map(x => [x.id, x]));
+  let url = '/sites/' + SP.site + '/lists/' + SP.list + "/items?$expand=fields($select=Title,Projekt,Kulcs,Mezo,Ertek,Rev,Idopont,Megjegyzes,Adat)&$select=id,createdBy,fields&$filter=fields/Projekt eq '" + proj + "'&$top=999", n = 0;
+  while (url) {
+    const r = await gx(url, { headers: { Prefer: 'HonorNonIndexedQueriesWarningMayFailRandomly' } });
+    for (const it of r.value || []) {
+      const f = it.fields || {}, id = String(f.Title || ''); if (!id) continue; const by = (it.createdBy && it.createdBy.user && it.createdBy.user.displayName) || '';
+      const x = have.get(id); if (x) { if (!x.sync || (by && x.by !== by)) { x.sync = true; if (by) x.by = by; n++; } continue; }
+      const e = { id: id, k: String(f.Kulcs || ''), f: String(f.Mezo || ''), v: +f.Ertek || 0, rev: +f.Rev || 0, at: String(f.Idopont || ''), by: by, sync: true }; if (f.Megjegyzes) e.note = String(f.Megjegyzes);
+      if (f.Adat) { try { e.mm = JSON.parse(f.Adat); } catch (er) {} }
+      if (e.k && e.f && e.at) { EV.push(e); have.set(id, e); n++; }
+    }
+    url = r['@odata.nextLink'] || '';
+  }
+  return n;
+}
+async function spPush() {
+  let n = 0;
+  for (const x of EV.filter(e => !e.sync)) {
+    const fields = { Title: x.id, Projekt: String(PKG.projekt || ''), Kulcs: x.k, Mezo: x.f, Ertek: x.v, Rev: x.rev, Idopont: x.at, Megjegyzes: x.note || '' };
+    if (x.mm) fields.Adat = JSON.stringify(x.mm);
+    await gx('/sites/' + SP.site + '/lists/' + SP.list + '/items', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fields: fields }) });
+    x.sync = true; n++;
+  }
+  return n;
+}
+async function spSync(quiet) {
+  if (!SP.ready || !PKG || SP.busy) return; if (navigator.onLine === false) { SP.err = 'offline'; ui(); return; }
+  SP.busy = true;
+  try { const a = await spPull(), b = await spPush(); LS.set(evKey(), JSON.stringify(EV)); replay(); SP.last = new Date().toISOString(); SP.err = ''; SP.busy = false; ui(); if (!quiet && (a || b)) toast('SharePoint: ' + b + ' elküldve, ' + a + ' új a többiektől'); }
+  catch (e) { SP.busy = false; SP.err = e.message || String(e); ui(); }
+  finally { SP.busy = false; }
+}
+const spKick = () => { if (!SP.ready) return; clearTimeout(SP.t); SP.t = setTimeout(() => spSync(true), 400); };
+async function spUpload(file) { // tervező: kiadási csomag feltöltése a tárba (csak szerkesztési joggal)
+  const txt = await file.text(); let P; try { P = JSON.parse(txt); } catch (e) { toast('A fájl nem olvasható (hibás JSON).'); return; }
+  if (!P || !/^fdb-kigyo-kiadas\//.test(P.format || '')) { toast('Ez nem Kígyó kiadási csomag.'); return; }
+  try { await gx('/drives/' + SP.drive + '/root:/' + encodeURIComponent(file.name) + ':/content', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: txt }); toast('Feltöltve: ' + file.name); await spPkgs(); SP.err = ''; loadPkg(txt); spKick(); }
+  catch (e) { toast('A feltöltés nem sikerült: ' + e.message, 5000); }
+}
+function spBar() { if (!SP.on) return ''; if (SP.err === 'nopkg') return ' · <span class="warn">nincs kiadás a tárban</span>'; if (SP.err === 'missing') return ' · <span class="warn">hiányzik: ' + esc(SP.miss.join(', ')) + '</span>'; if (SP.err === 'login') return ' · <span class="warn">bejelentkezés szükséges</span>'; if (SP.err === 'offline') return ' · <span class="warn">offline – a jelölések itt várnak</span>'; if (SP.err) return ' · <span class="warn">SharePoint: ' + esc(SP.err) + '</span>'; if (!SP.ready) return ' · SharePoint…'; return ' · SharePoint ' + (SP.busy ? 'szinkron…' : SP.last ? '✓ ' + esc(fmtT(SP.last).slice(-5)) : ''); }
+mmBind();
+// keresés és QR-mélylink: #k + a kulcs hexában (a Kígyó címkéiről)
+const kkCode = k => 'k' + Array.from(k).map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join('');
+const kkDecode = h => { const m = /^#?k((?:[0-9a-f]{2}){3,40})$/i.exec(String(h || '').trim()); if (!m) return null; let k = ''; for (let i = 0; i < m[1].length; i += 2) k += String.fromCharCode(parseInt(m[1].slice(i, i + 2), 16)); return k; };
+const norm = t => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+// felcserélhetőség: azonos tételszám = azonos gyártási forma (méret, alak, dőlés mértéke, élhajlítás, kivágás helye, funkció); a tételszám a kiadás óta rögzített
+function swapHtml(e) {
+  if (!e.tetel) return '';
+  const S = EL.filter(x => x.tetel === e.tetel && x !== e);
+  if (!S.length) return '<div class="sw">Egyedi darab – nincs vele felcserélhető.</div>';
+  const free = S.filter(x => !stOf(x.kulcs).ps), on = HLT === e.tetel;
+  return '<div class="sw">Felcserélhető <b>' + S.length + '</b> azonos darabbal (' + esc(e.tetel) + '), ebből még nincs felszerelve: <b>' + free.length + '</b>' + (PKG.ajtok_osszevonva ? '<br><span class="warn">Az ajtók össze voltak vonva a méret szerinti tétellel: ajtós és sima tábla is lehet köztük.</span>' : '') +
+    ' <button class="btn sm" type="button" data-a="hlT" aria-pressed="' + on + '">' + (on ? 'Kiemelés ki' : 'Kiemelés a 3D-ben') + '</button>' +
+    '<details><summary>Lista</summary><div class="rq">' + S.slice().sort((a, b) => (stOf(a.kulcs).ps ? 1 : 0) - (stOf(b.kulcs).ps ? 1 : 0) || a.jel.localeCompare(b.jel, 'hu', { numeric: true })).slice(0, 80).map(x => '<button type="button" data-a="go" data-k="' + esc(x.kulcs) + '"><b>' + esc(x.jel) + '</b><small>' + (stOf(x.kulcs).ps ? 'felszerelve' : stOf(x.kulcs).hs === 2 ? 'szerelhető' : 'még nem szerelhető') + '</small></button>').join('') + '</div></details></div>';
+}
+function srchHtml(q) {
+  q = norm(q); if (!q || !PKG) return ''; const ck = kkDecode(q.replace(/^.*#/, ''));
+  const L = ck ? EL.filter(e => e.kulcs === ck) : /^t\d+$/.test(q) ? EL.filter(e => norm(e.tetel) === q) : EL.filter(e => norm(e.jel).includes(q));
+  if (!L.length) return '<p class="note">Nincs találat.</p>';
+  return L.slice(0, 12).map(e => '<button type="button" data-a="go" data-k="' + esc(e.kulcs) + '"><b>' + esc(e.jel) + '</b><small>' + esc(e.meret || '') + '</small></button>').join('') + (L.length > 12 ? '<p class="note">+' + (L.length - 12) + ' további találat – pontosíts.</p>' : '');
+}
+document.addEventListener('input', e => { if (e.target && e.target.id === 'q') { QS = e.target.value; const r = $('qr'); if (r) r.innerHTML = srchHtml(QS); } });
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target && e.target.id === 'q') { const b = document.querySelector('#qr button[data-a="go"]'); if (b) { e.preventDefault(); b.click(); } } });
+function fromHash() { const k = kkDecode(location.hash); if (!k) return; if (!PKG) { PEND = k; toast('Előbb töltsd be a kiadási csomagot – utána az elem kijelölődik.', 4000); return; } PEND = null; if (goTo(k)) { const e = BYK.get(k); toast(e.jel); } }
+window.addEventListener('hashchange', fromHash);
+
+// ugrás egy elemre: kijelölés, és ha nem látszik, a nézet ráközelít (középre teszi)
+function goTo(k) { QS = ''; const e = BYK.get(k); if (!e) { toast('Ez az elem nincs a betöltött kiadásban.'); return false; } SEL.clear(); SEL.add(k); MULTI = false; ui(); const c = [0, 1, 2].map(j => e.pts.reduce((a, p) => a + p[j], 0) / e.pts.length), q = proj(c); if (q[0] < 20 || q[0] > W - 20 || q[1] < 20 || q[1] > H - 20) { CAM.ox += W / 2 - q[0]; CAM.oy += H * 0.4 - q[1]; } draw(); return true; }
+const saved = LS.get('kk-pkg'); if (saved) loadPkg(saved, true);
+ui(); resize(); setTimeout(fromHash, 80);
+$('spUpIn').addEventListener('change', () => { const f = $('spUpIn').files[0]; if (f) spUpload(f); $('spUpIn').value = ''; });
+if (SP.on) { spInit(); window.addEventListener('online', spKick); setInterval(() => { if (!document.hidden) spSync(true); }, 60000); }
+window.__kk = { sp: () => ({ on: SP.on, ready: SP.ready, err: SP.err, pk: SP.pk.length, unsent: unsent() }), spSync: () => spSync(), loadPkg: loadPkg, sel: k => { SEL.clear(); for (const x of [].concat(k)) SEL.add(x); ui(); }, setSt: setSt, ev: () => EV, st: k => stOf(k), name: n => { ME = n; LS.set('kk-me', n); ui(); }, multi: v => { MULTI = v; ui(); }, keys: () => EL.slice(0, 5).map(e => e.kulcs), hit: (x, y) => hitPoint(x, y), proj: q => proj(q), cam: () => JSON.parse(JSON.stringify(CAM)) };
+})();
+</script>
+
+</body>
+</html>
